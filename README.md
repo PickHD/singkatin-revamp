@@ -14,5 +14,7 @@ Revamped Last Projects URL Shortener API's using Golang.
 4. RabbitMQ
 
 ## ERD
+![ERD](https://raw.github.com/PickHD/singkatin-revamp/master/erd_singkatin_revamp.png)
 
 ## Architect Overview
+![ERD](https://raw.github.com/PickHD/singkatin-revamp/master/arch_singkatin_revamp.png)
