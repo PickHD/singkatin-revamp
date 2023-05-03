@@ -1,5 +1,5 @@
 # singkatin-revamp
-Revamped Last Projects URL Shortener API's using Golang.
+Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin-api) using Golang.
 
 ## Whats Changed?
 1. From Monolith to Microservices
