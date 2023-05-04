@@ -20,7 +20,7 @@ type App struct {
 	Context     context.Context
 	Config      *config.Configuration
 	Logger      *logrus.Logger
-	DB          *mongo.Client
+	DB          *mongo.Database
 	Redis       *redis.Client
 	RabbitMQ    *amqp.Channel
 }
@@ -47,7 +47,9 @@ func SetupApplication(ctx context.Context) (*App, error) {
 		app.Logger.Error("failed connect mongoDB, error :", err)
 		return app, err
 	}
-	app.DB = mongoClient
+
+	db := mongoClient.Database(app.Config.Database.Name)
+	app.DB = db
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", app.Config.Redis.Host, app.Config.Redis.Port),
@@ -106,7 +108,7 @@ func (a *App) Close() {
 
 	defer func() {
 		if a.DB != nil {
-			if err := a.DB.Disconnect(a.Context); err != nil {
+			if err := a.DB.Client().Disconnect(a.Context); err != nil {
 				panic(err)
 			}
 		}
