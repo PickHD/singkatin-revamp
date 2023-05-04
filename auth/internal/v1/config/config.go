@@ -6,10 +6,12 @@ type (
 	Configuration struct {
 		Common   *Common
 		Database *Database
+		Secret   *Secret
 	}
 
 	Common struct {
-		Port int
+		Port      int
+		JWTExpire int
 	}
 
 	Database struct {
@@ -19,12 +21,17 @@ type (
 		UsersCollection      string
 		ShortenersCollection string
 	}
+
+	Secret struct {
+		JWTSecret string
+	}
 )
 
 func loadConfiguration() *Configuration {
 	return &Configuration{
 		Common: &Common{
-			Port: helper.GetEnvInt("APP_PORT"),
+			Port:      helper.GetEnvInt("APP_PORT"),
+			JWTExpire: helper.GetEnvInt("JWT_EXPIRE"),
 		},
 		Database: &Database{
 			Port:                 helper.GetEnvInt("DB_PORT"),
@@ -32,6 +39,9 @@ func loadConfiguration() *Configuration {
 			Name:                 helper.GetEnvString("DB_NAME"),
 			UsersCollection:      helper.GetEnvString("DB_COLLECTION_USERS"),
 			ShortenersCollection: helper.GetEnvString("DB_COLLECTION_SHORTENERS"),
+		},
+		Secret: &Secret{
+			JWTSecret: helper.GetEnvString("JWT_SECRET"),
 		},
 	}
 }
