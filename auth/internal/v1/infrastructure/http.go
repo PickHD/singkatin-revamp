@@ -27,6 +27,8 @@ func setupRouter(app *application.App) {
 		v1.GET("/health-check", dep.HealthCheckController.Check)
 
 		v1.POST("/register", dep.AuthController.Register)
+
+		v1.POST("/login", dep.AuthController.Login)
 	}
 
 }

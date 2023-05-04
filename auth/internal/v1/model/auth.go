@@ -1,6 +1,9 @@
 package model
 
-import "regexp"
+import (
+	"regexp"
+	"time"
+)
 
 type (
 	// RegisterRequest consist request data for registering as users
@@ -14,6 +17,19 @@ type (
 	RegisterResponse struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
+	}
+
+	// LoginRequest consist request data for login as users
+	LoginRequest struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// LoginResponse consist response of success login as users
+	LoginResponse struct {
+		AccessToken string    `json:"access_token"`
+		Type        string    `json:"type"`
+		ExpireAt    time.Time `json:"expired_at"`
 	}
 )
 
