@@ -39,25 +39,32 @@ func NewAuthRepository(ctx context.Context, config *config.Configuration, logger
 func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (*model.User, error) {
 	// check data users by email is already exists or not
 	err := ar.DB.Collection(ar.Config.Database.UsersCollection).FindOne(ctx, bson.D{{Key: "email", Value: req.Email}}).Err()
-	if err != nil || err == mongo.ErrNoDocuments {
-		res, err := ar.DB.Collection(ar.Config.Database.UsersCollection).InsertOne(ctx, model.User{
-			FullName: req.FullName,
-			Email:    req.Email,
-			Password: req.Password,
-		})
-		if err != nil {
-			ar.Logger.Error("AuthRepositoryImpl.CreateUser InsertOne ERROR, ", err)
-			return nil, err
+	if err != nil {
+		// if doc not exists, create new one
+		if err == mongo.ErrNoDocuments {
+			res, err := ar.DB.Collection(ar.Config.Database.UsersCollection).InsertOne(ctx, model.User{
+				FullName: req.FullName,
+				Email:    req.Email,
+				Password: req.Password,
+			})
+			if err != nil {
+				ar.Logger.Error("AuthRepositoryImpl.CreateUser InsertOne ERROR, ", err)
+				return nil, err
+			}
+
+			id, ok := res.InsertedID.(primitive.ObjectID)
+			if !ok {
+				ar.Logger.Error("AuthRepositoryImpl.CreateUser Type Assertion ERROR, ", err)
+				return nil, model.NewError("Type", "type assertion error")
+			}
+			req.ID = id
+
+			return req, nil
 		}
 
-		id, ok := res.InsertedID.(primitive.ObjectID)
-		if !ok {
-			ar.Logger.Error("AuthRepositoryImpl.CreateUser Type Assertion ERROR, ", err)
-			return nil, model.NewError("Type", "type assertion error")
-		}
-		req.ID = id
+		ar.Logger.Error("AuthRepositoryImpl.CreateUser FindOne ERROR, ", err)
+		return nil, err
 
-		return req, nil
 	}
 
 	return nil, model.NewError(model.Validation, "email already exists")
