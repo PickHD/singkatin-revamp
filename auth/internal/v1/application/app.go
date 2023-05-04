@@ -18,7 +18,7 @@ type App struct {
 	Context     context.Context
 	Config      *config.Configuration
 	Logger      *logrus.Logger
-	DB          *mongo.Client
+	DB          *mongo.Database
 }
 
 // SetupApplication configuring dependencies app needed
@@ -38,12 +38,14 @@ func SetupApplication(ctx context.Context) (*App, error) {
 	logWithLogrus.ReportCaller = true
 	app.Logger = logWithLogrus
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%d", app.Config.Database.Host, app.Config.Database.Port)))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%d", app.Config.Database.Host, app.Config.Database.Port)))
 	if err != nil {
 		app.Logger.Error("failed connect mongoDB, error :", err)
 		return app, err
 	}
-	app.DB = client
+
+	db := mongoClient.Database(app.Config.Database.Name)
+	app.DB = db
 
 	app.Application = gin.New()
 	app.Application.Use(middleware.CORSMiddleware())
@@ -58,7 +60,7 @@ func (a *App) Close() {
 	a.Logger.Info("APP CLOSED SUCCESSFULLY")
 
 	defer func() {
-		if err := a.DB.Disconnect(a.Context); err != nil {
+		if err := a.DB.Client().Disconnect(context.Background()); err != nil {
 			panic(err)
 		}
 	}()
