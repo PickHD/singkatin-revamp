@@ -18,12 +18,21 @@ definitions:
       total_page:
         type: integer
     type: object
+  model.RegisterRequest:
+    properties:
+      email:
+        type: string
+      fullname:
+        type: string
+      password:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
     email: taufikjanuar35@gmail.com
     name: Taufik Januar
-  description: Revamped URL Shortener API
+  description: Revamped URL Shortener API - Auth Services
   license:
     name: MIT
   title: Singkatin Revamp API
@@ -47,6 +56,35 @@ paths:
       summary: Checking Health Services
       tags:
       - Health Check
+  /register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: register user
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Register users
+      tags:
+      - Auth
 schemes:
 - http
 swagger: "2.0"
