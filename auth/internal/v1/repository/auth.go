@@ -15,6 +15,7 @@ type (
 	// AuthRepository is an interface that has all the function to be implemented inside auth repository
 	AuthRepository interface {
 		CreateUser(ctx context.Context, req *model.User) (*model.User, error)
+		FindByEmail(ctx context.Context, email string) (*model.User, error)
 	}
 
 	// AuthRepositoryImpl is an app auth struct that consists of all the dependencies needed for auth repository
@@ -68,4 +69,20 @@ func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (
 	}
 
 	return nil, model.NewError(model.Validation, "email already exists")
+}
+
+func (ar *AuthRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	user := model.User{}
+
+	err := ar.DB.Collection(ar.Config.Database.UsersCollection).FindOne(ctx, bson.D{{Key: "email", Value: email}}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, model.NewError(model.NotFound, "users not found")
+		}
+
+		ar.Logger.Error("AuthRepositoryImpl.FindByEmail FindOne ERROR, ", err)
+		return nil, err
+	}
+
+	return &user, nil
 }
