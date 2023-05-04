@@ -15,8 +15,11 @@ type (
 	}
 
 	Database struct {
-		Port int
-		Host string
+		Port                 int
+		Host                 string
+		Name                 string
+		UsersCollection      string
+		ShortenersCollection string
 	}
 
 	Redis struct {
@@ -38,8 +41,11 @@ func loadConfiguration() *Configuration {
 			Port: helper.GetEnvInt("APP_PORT"),
 		},
 		Database: &Database{
-			Port: helper.GetEnvInt("DB_PORT"),
-			Host: helper.GetEnvString("DB_HOST"),
+			Port:                 helper.GetEnvInt("DB_PORT"),
+			Host:                 helper.GetEnvString("DB_HOST"),
+			Name:                 helper.GetEnvString("DB_NAME"),
+			UsersCollection:      helper.GetEnvString("DB_COLLECTION_USERS"),
+			ShortenersCollection: helper.GetEnvString("DB_COLLECTION_SHORTENERS"),
 		},
 		Redis: &Redis{
 			Host: helper.GetEnvString("REDIS_HOST"),

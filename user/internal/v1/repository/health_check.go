@@ -19,12 +19,12 @@ type (
 		Context context.Context
 		Config  *config.Configuration
 		Logger  *logrus.Logger
-		DB      *mongo.Client
+		DB      *mongo.Database
 	}
 )
 
 // NewHealthCheckRepository return new instances health check repository
-func NewHealthCheckRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, db *mongo.Client) *HealthCheckRepositoryImpl {
+func NewHealthCheckRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, db *mongo.Database) *HealthCheckRepositoryImpl {
 	return &HealthCheckRepositoryImpl{
 		Context: ctx,
 		Config:  config,
@@ -34,7 +34,7 @@ func NewHealthCheckRepository(ctx context.Context, config *config.Configuration,
 }
 
 func (hr *HealthCheckRepositoryImpl) Check() (bool, error) {
-	if err := hr.DB.Ping(hr.Context, nil); err != nil {
+	if err := hr.DB.Client().Ping(hr.Context, nil); err != nil {
 		hr.Logger.Error("HealthCheckRepositoryImpl.Check() Ping DB ERROR, ", err)
 		return false, nil
 	}
