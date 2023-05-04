@@ -18,6 +18,13 @@ definitions:
       total_page:
         type: integer
     type: object
+  model.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
   model.RegisterRequest:
     properties:
       email:
@@ -56,6 +63,39 @@ paths:
       summary: Checking Health Services
       tags:
       - Health Check
+  /login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: login user
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Login users
+      tags:
+      - Auth
   /register:
     post:
       consumes:
