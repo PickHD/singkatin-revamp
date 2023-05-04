@@ -6,7 +6,7 @@ type (
 	BaseResponse struct {
 		Messages string      `json:"messages"`
 		Data     interface{} `json:"data"`
-		Error    error       `json:"error"`
+		Error    error       `json:"error,omitempty"`
 		Meta     *Meta       `json:"meta,omitempty"`
 	}
 

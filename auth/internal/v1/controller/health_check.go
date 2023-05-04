@@ -44,7 +44,7 @@ func NewHealthCheckController(ctx context.Context, config *config.Configuration,
 func (hc *HealthCheckControllerImpl) Check(ctx *gin.Context) {
 	ok, err := hc.HealthCheckSvc.Check()
 	if err != nil || !ok {
-		helper.NewResponses[any](ctx, http.StatusInternalServerError, "not OK", ok, err, nil)
+		helper.NewResponses[any](ctx, http.StatusInternalServerError, "Not OK", ok, err, nil)
 	}
 
 	helper.NewResponses[any](ctx, http.StatusOK, "OK", ok, nil, nil)
