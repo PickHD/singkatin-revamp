@@ -7,10 +7,12 @@ type (
 		Common   *Common
 		Database *Database
 		RabbitMQ *RabbitMQ
+		Secret   *Secret
 	}
 
 	Common struct {
-		Port int
+		Port      int
+		JWTExpire int
 	}
 
 	Database struct {
@@ -26,12 +28,17 @@ type (
 		QueueCreateShortener string
 		QueueUpdateVisitor   string
 	}
+
+	Secret struct {
+		JWTSecret string
+	}
 )
 
 func loadConfiguration() *Configuration {
 	return &Configuration{
 		Common: &Common{
-			Port: helper.GetEnvInt("APP_PORT"),
+			Port:      helper.GetEnvInt("APP_PORT"),
+			JWTExpire: helper.GetEnvInt("JWT_EXPIRE"),
 		},
 		Database: &Database{
 			Port:                 helper.GetEnvInt("DB_PORT"),
@@ -44,6 +51,9 @@ func loadConfiguration() *Configuration {
 			ConnURL:              helper.GetEnvString("AMQP_SERVER_URL"),
 			QueueCreateShortener: helper.GetEnvString("AMQP_QUEUE_CREATE_SHORTENER"),
 			QueueUpdateVisitor:   helper.GetEnvString("AMQP_QUEUE_UPDATE_VISITOR"),
+		},
+		Secret: &Secret{
+			JWTSecret: helper.GetEnvString("JWT_SECRET"),
 		},
 	}
 }
