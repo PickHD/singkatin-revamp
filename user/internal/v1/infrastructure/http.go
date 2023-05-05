@@ -2,6 +2,8 @@ package infrastructure
 
 import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/application"
+	"github.com/PickHD/singkatin-revamp/user/internal/v1/helper"
+	"github.com/PickHD/singkatin-revamp/user/internal/v1/middleware"
 	"github.com/gofiber/fiber/v2"
 
 	fiberSwagger "github.com/swaggo/fiber-swagger"
@@ -24,6 +26,13 @@ func setupRouter(app *application.App) {
 		v1.Get("/swagger/*any", fiberSwagger.WrapHandler)
 
 		v1.Get("/health-check", dep.HealthCheckController.Check)
+
+		v1.Get("/me", middleware.ValidateJWTMiddleware, dep.UserController.Profile)
 	}
+
+	// handler for route not found
+	app.Application.Use(func(c *fiber.Ctx) error {
+		return helper.NewResponses[any](c, fiber.StatusNotFound, "Route not found", nil, nil, nil)
+	})
 
 }

@@ -81,7 +81,7 @@ func SetupApplication(ctx context.Context) (*App, error) {
 	app.Application = fiber.New()
 	app.Application.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
 	app.Logger.Info("APP RUN SUCCESSFULLY")
