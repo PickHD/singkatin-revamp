@@ -56,7 +56,7 @@ func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (
 			id, ok := res.InsertedID.(primitive.ObjectID)
 			if !ok {
 				ar.Logger.Error("AuthRepositoryImpl.CreateUser Type Assertion ERROR, ", err)
-				return nil, model.NewError("Type", "type assertion error")
+				return nil, model.NewError(model.Type, "type assertion error")
 			}
 			req.ID = id
 
