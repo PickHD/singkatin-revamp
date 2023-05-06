@@ -9,8 +9,10 @@ deps:
 	$(GOGET) -v ./...
 run-auth: 
 	$(GOCMD) run ./auth/cmd/v1/main.go http
-run-shortener: 
+run-shortener-http: 
 	$(GOCMD) run ./shortener/cmd/v1/main.go http
+run-shortener-grpc:
+	$(GOCMD) run ./shortener/cmd/v1/main.go grpc
 run-user:
 	$(GOCMD) run ./user/cmd/v1/main.go http
 	

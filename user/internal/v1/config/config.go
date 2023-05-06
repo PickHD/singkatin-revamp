@@ -13,6 +13,7 @@ type (
 	Common struct {
 		Port      int
 		JWTExpire int
+		GRPCPort  string
 	}
 
 	Database struct {
@@ -39,6 +40,7 @@ func loadConfiguration() *Configuration {
 		Common: &Common{
 			Port:      helper.GetEnvInt("APP_PORT"),
 			JWTExpire: helper.GetEnvInt("JWT_EXPIRE"),
+			GRPCPort:  helper.GetEnvString("GRPC_SHORTENER_HOST"),
 		},
 		Database: &Database{
 			Port:                 helper.GetEnvInt("DB_PORT"),
