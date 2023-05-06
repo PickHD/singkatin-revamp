@@ -17,6 +17,7 @@ type (
 	// UserController is an interface that has all the function to be implemented inside user controller
 	UserController interface {
 		Profile(ctx *fiber.Ctx) error
+		Dashboard(ctx *fiber.Ctx) error
 	}
 
 	// UserControllerImpl is an app user struct that consists of all the dependencies needed for user controller
@@ -65,4 +66,32 @@ func (uc *UserControllerImpl) Profile(ctx *fiber.Ctx) error {
 	}
 
 	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success get Profiles", detail, nil, nil)
+}
+
+// Check godoc
+// @Summary      Get Dashboard
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
+// @Success      200  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /dashboard [get]
+func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
+	data := ctx.Locals(model.KeyJWTValidAccess)
+	extData, err := middleware.Extract(data)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	detail, err := uc.UserSvc.GetUserShorts(extData.UserID)
+	if err != nil {
+		if strings.Contains(err.Error(), string(model.NotFound)) {
+			return helper.NewResponses[any](ctx, fiber.StatusNotFound, err.Error(), nil, err, nil)
+		}
+
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success get Dashboard", detail, nil, nil)
 }

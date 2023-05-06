@@ -29,6 +29,30 @@ info:
   title: Singkatin Revamp API
   version: "1.0"
 paths:
+  /dashboard:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Authorization Bearer <Place Access Token Here>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Get Dashboard
+      tags:
+      - User
   /health-check:
     get:
       consumes:
