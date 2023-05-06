@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package api.v1.proto.shortener;
+
+option go_package = "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener;shortenerpb";
+
+message Shortener {
+    string id = 1;
+    string full_url = 2;
+    string short_url = 3;
+    int64 visited = 4;
+}
+
+service ShortenerService {
+    rpc GetListShortenerByUserID(ListShortenerRequest) returns (ListShortenerResponse);
+}
+
+message ListShortenerRequest {
+    string user_id=1;
+}
+
+message ListShortenerResponse {
+    repeated Shortener shorteners=1;
+}
+

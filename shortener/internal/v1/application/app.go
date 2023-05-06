@@ -12,6 +12,7 @@ import (
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
 )
 
 // App ...
@@ -23,6 +24,7 @@ type App struct {
 	DB          *mongo.Database
 	Redis       *redis.Client
 	RabbitMQ    *amqp.Channel
+	GRPC        *grpc.Server
 }
 
 // SetupApplication configuring dependencies app needed
@@ -96,6 +98,8 @@ func SetupApplication(ctx context.Context) (*App, error) {
 		AllowOrigins: []string{"*"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
+
+	app.GRPC = grpc.NewServer()
 
 	app.Logger.Info("APP RUN SUCCESSFULLY")
 

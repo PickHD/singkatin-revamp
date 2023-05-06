@@ -28,6 +28,8 @@ func setupRouter(app *application.App) {
 		v1.Get("/health-check", dep.HealthCheckController.Check)
 
 		v1.Get("/me", middleware.ValidateJWTMiddleware, dep.UserController.Profile)
+
+		v1.Get("/dashboard", middleware.ValidateJWTMiddleware, dep.UserController.Dashboard)
 	}
 
 	// handler for route not found

@@ -2,22 +2,27 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/application"
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/infrastructure"
 	"github.com/joho/godotenv"
+	"google.golang.org/grpc"
 )
 
 const (
 	localServerMode = "local"
 	httpServerMode  = "http"
 	consumerMode    = "consumer"
+	grpcMode        = "grpc"
 )
 
 // @title           Singkatin Revamp API
@@ -89,5 +94,49 @@ func main() {
 		}
 
 		app.Logger.Info("SERVER SHUTDOWN GRACEFULLY")
+	case grpcMode:
+		var (
+			grpcServer = infrastructure.ServeGRPC(app)
+		)
+
+		errC := make(chan error, 1)
+
+		ctx, stop := signal.NotifyContext(context.Background(),
+			os.Interrupt,
+			syscall.SIGTERM,
+			syscall.SIGQUIT)
+
+		go func() {
+			addr := fmt.Sprintf("0.0.0.0:%d", app.Config.Common.GrpcPort)
+
+			lis, err := net.Listen("tcp", addr)
+			if err != nil {
+				app.Logger.Error("cannot listen tcp grpc", err)
+			}
+
+			app.Logger.Info("Listening and serving GRPC server", lis.Addr().String())
+
+			if err := grpcServer.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+				errC <- err
+			}
+		}()
+
+		go func() {
+			<-ctx.Done()
+
+			app.Logger.Info("Shutdown signal received")
+
+			defer func() {
+				stop()
+				close(errC)
+			}()
+
+			app.Logger.Info("Shutdown completed")
+		}()
+
+		if err := <-errC; err != nil {
+			app.Logger.Error("Error received by channel", err)
+		}
+
 	}
 }
