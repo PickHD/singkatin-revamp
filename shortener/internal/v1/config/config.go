@@ -11,7 +11,8 @@ type (
 	}
 
 	Common struct {
-		Port int
+		Port     int
+		GrpcPort int
 	}
 
 	Database struct {
@@ -38,7 +39,8 @@ type (
 func loadConfiguration() *Configuration {
 	return &Configuration{
 		Common: &Common{
-			Port: helper.GetEnvInt("APP_PORT"),
+			Port:     helper.GetEnvInt("APP_PORT"),
+			GrpcPort: helper.GetEnvInt("GRPC_PORT"),
 		},
 		Database: &Database{
 			Port:                 helper.GetEnvInt("DB_PORT"),

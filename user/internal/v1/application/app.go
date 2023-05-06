@@ -11,6 +11,8 @@ import (
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // App ...
@@ -20,6 +22,7 @@ type App struct {
 	Config      *config.Configuration
 	Logger      *logrus.Logger
 	DB          *mongo.Database
+	GRPC        *grpc.ClientConn
 }
 
 // SetupApplication configuring dependencies app needed
@@ -76,6 +79,16 @@ func SetupApplication(ctx context.Context) (*App, error) {
 			app.Logger.Error("failed queue declare Channels, error :", err)
 			return nil, err
 		}
+	}
+
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	app.GRPC, err = grpc.Dial(app.Config.Common.GRPCPort, opts...)
+	if err != nil {
+		app.Logger.Error("failed Dial GRPC, error :", err)
+		return app, err
 	}
 
 	app.Application = fiber.New()

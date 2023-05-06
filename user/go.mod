@@ -10,7 +10,17 @@ require (
 	go.mongodb.org/mongo-driver v1.11.4
 )
 
-require github.com/streadway/amqp v1.0.0
+require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/streadway/amqp v1.0.0
+	google.golang.org/grpc v1.55.0
+	google.golang.org/protobuf v1.30.0
+)
+
+require (
+	github.com/golang/protobuf v1.5.3 // indirect
+	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -31,7 +41,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pkg/errors v0.9.1
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
