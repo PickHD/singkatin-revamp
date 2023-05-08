@@ -137,6 +137,7 @@ func main() {
 		if err := <-errC; err != nil {
 			app.Logger.Error("Error received by channel", err)
 		}
-
+	case consumerMode:
+		infrastructure.ConsumeMessages(app, app.Config.RabbitMQ.QueueCreateShortener)
 	}
 }
