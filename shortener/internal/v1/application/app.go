@@ -94,7 +94,7 @@ func SetupApplication(ctx context.Context) (*App, error) {
 	app.Application = echo.New()
 	app.Application.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 	}))
 
 	app.GRPC = grpc.NewServer()
