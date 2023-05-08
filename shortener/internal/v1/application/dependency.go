@@ -14,7 +14,7 @@ type Dependency struct {
 func SetupDependencyInjection(app *App) *Dependency {
 	// repository
 	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.DB, app.Redis)
-	shortRepoImpl := repository.NewShortRepository(app.Context, app.Config, app.Logger, app.DB)
+	shortRepoImpl := repository.NewShortRepository(app.Context, app.Config, app.Logger, app.DB, app.Redis, app.RabbitMQ)
 
 	// service
 	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, healthCheckRepoImpl)
