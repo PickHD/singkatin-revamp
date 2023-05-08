@@ -57,7 +57,7 @@ func loadConfiguration() *Configuration {
 		RabbitMQ: &RabbitMQ{
 			ConnURL:              helper.GetEnvString("AMQP_SERVER_URL"),
 			QueueCreateShortener: helper.GetEnvString("AMQP_QUEUE_CREATE_SHORTENER"),
-			QueueUpdateVisitor:   helper.GetEnvString("AMQP_QUEUE_UPDATE_VISITOR"),
+			QueueUpdateVisitor:   helper.GetEnvString("AMQP_QUEUE_UPDATE_VISITOR_COUNT"),
 		},
 	}
 }

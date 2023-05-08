@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/model"
@@ -44,9 +45,10 @@ func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (
 		// if doc not exists, create new one
 		if err == mongo.ErrNoDocuments {
 			res, err := ar.DB.Collection(ar.Config.Database.UsersCollection).InsertOne(ctx, model.User{
-				FullName: req.FullName,
-				Email:    req.Email,
-				Password: req.Password,
+				FullName:  req.FullName,
+				Email:     req.Email,
+				Password:  req.Password,
+				CreatedAt: time.Now(),
 			})
 			if err != nil {
 				ar.Logger.Error("AuthRepositoryImpl.CreateUser InsertOne ERROR, ", err)
