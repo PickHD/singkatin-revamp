@@ -29,6 +29,38 @@ info:
   title: Singkatin Revamp API
   version: "1.0"
 paths:
+  /{short_url}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: short urls
+        in: path
+        name: short_url
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Click Shorteners URL
+      tags:
+      - Shortener
   /health-check:
     get:
       consumes:

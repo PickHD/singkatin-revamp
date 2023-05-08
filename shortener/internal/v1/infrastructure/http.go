@@ -24,6 +24,8 @@ func setupRouter(app *application.App) {
 		v1.GET("/swagger/*any", echoSwagger.WrapHandler)
 
 		v1.GET("/health-check", dep.HealthCheckController.Check)
+
+		v1.GET("/:short_url", dep.ShortController.ClickShortener)
 	}
 
 }

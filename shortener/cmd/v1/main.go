@@ -138,6 +138,15 @@ func main() {
 			app.Logger.Error("Error received by channel", err)
 		}
 	case consumerMode:
-		infrastructure.ConsumeMessages(app, app.Config.RabbitMQ.QueueCreateShortener)
+		// Make a channel to receive messages into infinite loop.
+		forever := make(chan bool)
+
+		queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor}
+
+		for _, q := range queues {
+			go infrastructure.ConsumeMessages(app, q)
+		}
+
+		<-forever
 	}
 }
