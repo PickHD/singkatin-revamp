@@ -17,7 +17,7 @@ func SetupDependencyInjection(app *App) *Dependency {
 
 	// repository
 	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.DB)
-	userRepoImpl := repository.NewUserRepository(app.Context, app.Config, app.Logger, app.DB)
+	userRepoImpl := repository.NewUserRepository(app.Context, app.Config, app.Logger, app.DB, app.RabbitMQ)
 
 	// service
 	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, healthCheckRepoImpl)
