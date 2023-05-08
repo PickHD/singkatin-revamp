@@ -65,14 +65,12 @@ func SetupApplication(ctx context.Context) (*App, error) {
 		app.Logger.Error("failed dial RabbitMQ, error :", err)
 		return app, err
 	}
-	defer amqpConn.Close()
 
 	amqpClient, err := amqpConn.Channel()
 	if err != nil {
 		app.Logger.Error("failed open RabbitMQ Channels, error :", err)
 		return app, err
 	}
-	defer amqpClient.Close()
 
 	queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor}
 
