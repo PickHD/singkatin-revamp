@@ -18,6 +18,7 @@ type (
 	UserController interface {
 		Profile(ctx *fiber.Ctx) error
 		Dashboard(ctx *fiber.Ctx) error
+		GenerateShort(ctx *fiber.Ctx) error
 	}
 
 	// UserControllerImpl is an app user struct that consists of all the dependencies needed for user controller
@@ -86,12 +87,40 @@ func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
 
 	detail, err := uc.UserSvc.GetUserShorts(extData.UserID)
 	if err != nil {
-		if strings.Contains(err.Error(), string(model.NotFound)) {
-			return helper.NewResponses[any](ctx, fiber.StatusNotFound, err.Error(), nil, err, nil)
-		}
-
 		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
 	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success get Dashboard", detail, nil, nil)
+}
+
+// Check godoc
+// @Summary      Generate Users Short URL
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
+// @Param        short body model.GenerateShortUserRequest true "generate short user"
+// @Success      201  {object}  helper.BaseResponse
+// @Failure      400  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /short/generate [post]
+func (uc *UserControllerImpl) GenerateShort(ctx *fiber.Ctx) error {
+	var req model.GenerateShortUserRequest
+
+	data := ctx.Locals(model.KeyJWTValidAccess)
+	extData, err := middleware.Extract(data)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusBadRequest, err.Error(), nil, err, nil)
+	}
+
+	newShort, err := uc.UserSvc.GenerateUserShorts(extData.UserID, &req)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return helper.NewResponses[any](ctx, fiber.StatusCreated, "Success generate Short URL's", newShort, nil, nil)
 }

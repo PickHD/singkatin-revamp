@@ -22,6 +22,7 @@ type App struct {
 	Config      *config.Configuration
 	Logger      *logrus.Logger
 	DB          *mongo.Database
+	RabbitMQ    *amqp.Channel
 	GRPC        *grpc.ClientConn
 }
 
@@ -55,14 +56,12 @@ func SetupApplication(ctx context.Context) (*App, error) {
 		app.Logger.Error("failed dial RabbitMQ, error :", err)
 		return app, err
 	}
-	defer amqpConn.Close()
 
 	amqpClient, err := amqpConn.Channel()
 	if err != nil {
 		app.Logger.Error("failed open RabbitMQ Channels, error :", err)
 		return app, err
 	}
-	defer amqpClient.Close()
 
 	queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor}
 
@@ -80,6 +79,8 @@ func SetupApplication(ctx context.Context) (*App, error) {
 			return nil, err
 		}
 	}
+
+	app.RabbitMQ = amqpClient
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

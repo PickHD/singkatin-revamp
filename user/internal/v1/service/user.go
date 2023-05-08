@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/config"
+	"github.com/PickHD/singkatin-revamp/user/internal/v1/helper"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/model"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/repository"
 	shortenerpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener"
@@ -15,6 +16,7 @@ type (
 	UserService interface {
 		GetUserDetail(email string) (*model.User, error)
 		GetUserShorts(userID string) ([]model.UserShorts, error)
+		GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error)
 	}
 
 	// UserServiceImpl is an app user struct that consists of all the dependencies needed for user service
@@ -66,4 +68,21 @@ func (us *UserServiceImpl) GetUserShorts(userID string) ([]model.UserShorts, err
 	}
 
 	return shorteners, nil
+}
+
+func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error) {
+	msg := model.GenerateShortUserMessage{
+		FullURL:  req.FullURL,
+		UserID:   userID,
+		ShortURL: helper.RandomStringBytesMaskImprSrcSB(8),
+	}
+
+	err := us.UserRepo.PublishCreateUserShortener(us.Context, &msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.GenerateShortUserResponse{
+		ShortURL: msg.ShortURL,
+	}, nil
 }
