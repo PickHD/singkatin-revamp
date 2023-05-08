@@ -13,6 +13,7 @@ type (
 	// ShortService is an interface that has all the function to be implemented inside short service
 	ShortService interface {
 		GetListShortenerByUserID(ctx context.Context, userID string) ([]model.Short, error)
+		CreateShort(ctx context.Context, req *model.CreateShortRequest) error
 	}
 
 	// ShortServiceImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -41,4 +42,12 @@ func (ss *ShortServiceImpl) GetListShortenerByUserID(ctx context.Context, userID
 	}
 
 	return data, nil
+}
+
+func (ss *ShortServiceImpl) CreateShort(ctx context.Context, req *model.CreateShortRequest) error {
+	return ss.ShortRepo.Create(ctx, &model.Short{
+		FullURL:  req.FullURL,
+		ShortURL: req.ShortURL,
+		UserID:   req.UserID,
+	})
 }
