@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/config"
+	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/model"
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/service"
 	shortenerpb "github.com/PickHD/singkatin-revamp/shortener/pkg/api/v1/proto/shortener"
 	"github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ type (
 	// ShortController is an interface that has all the function to be implemented inside short controller
 	ShortController interface {
 		GetListShortenerByUserID(ctx context.Context, req *shortenerpb.ListShortenerRequest) (*shortenerpb.ListShortenerResponse, error)
+		ProcessCreateShortUser(ctx context.Context, req *model.CreateShortRequest) error
 	}
 
 	// ShortControllerImpl is an app short struct that consists of all the dependencies needed for short controller
@@ -61,4 +63,13 @@ func (sc *ShortControllerImpl) GetListShortenerByUserID(ctx context.Context, req
 	return &shortenerpb.ListShortenerResponse{
 		Shorteners: shorteners,
 	}, nil
+}
+
+func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, req *model.CreateShortRequest) error {
+	err := sc.ShortSvc.CreateShort(ctx, req)
+	if err != nil {
+		return model.NewError(model.Internal, err.Error())
+	}
+
+	return nil
 }

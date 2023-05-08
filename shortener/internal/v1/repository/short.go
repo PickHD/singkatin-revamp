@@ -14,6 +14,7 @@ type (
 	// ShortRepository is an interface that has all the function to be implemented inside short repository
 	ShortRepository interface {
 		GetListShortenerByUserID(ctx context.Context, userID string) ([]model.Short, error)
+		Create(ctx context.Context, req *model.Short) error
 	}
 
 	// ShortRepositoryImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -61,4 +62,15 @@ func (sr *ShortRepositoryImpl) GetListShortenerByUserID(ctx context.Context, use
 	}
 
 	return shorts, nil
+}
+
+func (sr *ShortRepositoryImpl) Create(ctx context.Context, req *model.Short) error {
+	_, err := sr.DB.Collection(sr.Config.Database.ShortenersCollection).InsertOne(ctx,
+		bson.D{{Key: "full_url", Value: req.FullURL}, {Key: "user_id", Value: req.UserID}, {Key: "short_url", Value: req.ShortURL}, {Key: "visited", Value: 0}})
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.Create InsertOne ERROR, ", err)
+		return err
+	}
+
+	return nil
 }
