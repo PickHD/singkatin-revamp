@@ -82,7 +82,7 @@ func (sc *ShortControllerImpl) GetListShortenerByUserID(ctx context.Context, req
 // @Accept       json
 // @Produce      json
 // @Param        short_url   path string  true  "short urls"
-// @Success      200  {object}  helper.BaseResponse
+// @Success      301  {object}  helper.BaseResponse
 // @Failure      400  {object}  helper.BaseResponse
 // @Failure      404  {object}  helper.BaseResponse
 // @Failure      500  {object}  helper.BaseResponse
