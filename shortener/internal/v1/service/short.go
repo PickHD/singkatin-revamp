@@ -96,6 +96,8 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 
 			return &model.ClickShortResponse{FullURL: data.FullURL}, nil
 		}
+
+		return nil, err
 	}
 
 	ss.Logger.Info("get data from caching....")
