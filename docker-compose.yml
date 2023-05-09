@@ -1,0 +1,126 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - '27017:27017'
+    networks:
+      - singkatin-dev
+    volumes:
+      - mongo_data:/data/db
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - '6379:6379'
+    networks:
+      - singkatin-dev
+    volumes:
+      - redis_data:/data
+  amqp:
+    image: rabbitmq:3-management-alpine
+    container_name: amqp
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - singkatin-dev
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
+  auth-service-http:
+    container_name: auth-service-http
+    build:
+      context: .
+      dockerfile: ./auth/build/http/Dockerfile
+    ports:
+      - '8080:8080'
+    command: auth-service http
+    networks:
+      - singkatin-dev
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    links:
+      - mongo
+  shortener-service-http:
+    container_name: shortener-service-http
+    build:
+      context: .
+      dockerfile: ./shortener/build/http/Dockerfile
+    ports:
+      - '8081:8081'
+    command: shortener-service http
+    networks:
+      - singkatin-dev
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+      - amqp
+    links:
+      - mongo
+      - redis
+      - amqp
+  shortener-service-grpc:
+    container_name: shortener-service-grpc
+    build:
+      context: .
+      dockerfile: ./shortener/build/grpc/Dockerfile
+    ports:
+      - '9091:9091'
+    command: shortener-service grpc
+    networks:
+      - singkatin-dev
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+      - amqp
+    links:
+      - mongo
+      - redis
+      - amqp
+  shortener-service-consumer:
+    container_name: shortener-service-consumer
+    build:
+      context: .
+      dockerfile: ./shortener/build/consumer/Dockerfile
+    command: shortener-service consumer
+    networks:
+      - singkatin-dev
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+      - amqp
+    links:
+      - mongo
+      - redis
+      - amqp
+  user-service-http:
+    container_name: user-service-http
+    build:
+      context: .
+      dockerfile: ./user/build/http/Dockerfile
+    ports:
+      - '8082:8082'
+    command: user-service http
+    networks:
+      - singkatin-dev
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+      - amqp
+    links:
+      - mongo
+      - redis
+      - amqp
+networks:
+  singkatin-dev:
+    driver: bridge
+volumes:
+    mongo_data:
+    redis_data:

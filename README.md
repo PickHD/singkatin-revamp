@@ -4,7 +4,7 @@ Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin
 ## Architect Overview :
 ![ERD](https://raw.github.com/PickHD/singkatin-revamp/master/arch_singkatin_revamp.png)
 
-## Whats Changed?
+## Whats Changed? :
 1. From Monolith to Microservices
 2. Scalable & Maintainable Codes
 3. Become Asynchronous Operation using Messaging Queues (RabbitMQ)
@@ -22,5 +22,24 @@ Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin
 3. Redis
 4. RabbitMQ
 5. GRPC
+6. Docker
 
+## Setup :
+_(make sure docker & docker-compose installed)_
+1. To build all services, run command : 
+    ```
+    $ make build
+    ```
 
+2. You can build & run all services in background using command : 
+    ``` 
+    $ make run
+    ```
+3. If you want to stop all services then run :
+    ```
+    $ make stop
+    ```
+4. Last if want to stop & remove entire services then run :
+    ```
+    $ make remove
+    ```

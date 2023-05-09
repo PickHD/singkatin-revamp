@@ -119,7 +119,7 @@ func (sr *ShortRepositoryImpl) GetFullURLByKey(ctx context.Context, shortURL str
 		return "", result.Err()
 	}
 
-	return result.String(), nil
+	return result.Val(), nil
 }
 
 func (sr *ShortRepositoryImpl) SetFullURLByKey(ctx context.Context, shortURL string, fullURL string, duration time.Duration) error {
