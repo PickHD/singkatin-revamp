@@ -27,7 +27,10 @@ const (
 // @BasePath        /v1
 // @Schemes         http
 func main() {
-	_ = godotenv.Load("./user/internal/v1/config/.env")
+	err := godotenv.Load("./cmd/v1/.env")
+	if err != nil {
+		panic(err)
+	}
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
