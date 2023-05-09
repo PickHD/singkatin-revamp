@@ -72,8 +72,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "301": {
+                        "description": "Moved Permanently",
                         "schema": {
                             "$ref": "#/definitions/helper.BaseResponse"
                         }
