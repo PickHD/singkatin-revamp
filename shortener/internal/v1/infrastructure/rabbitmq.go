@@ -1,11 +1,11 @@
 package infrastructure
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/application"
-	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/model"
+	shortenerpb "github.com/PickHD/singkatin-revamp/shortener/pkg/api/v1/proto/shortener"
+	"google.golang.org/protobuf/proto"
 )
 
 // ConsumeMessages generic function to consume message from defined param queues
@@ -32,32 +32,32 @@ func ConsumeMessages(app *application.App, queueName string) {
 		for msg := range messages {
 			switch queueName {
 			case app.Config.RabbitMQ.QueueCreateShortener:
-				var req model.CreateShortRequest
+				req := &shortenerpb.CreateShortenerMessage{}
 
-				err := json.Unmarshal(msg.Body, &req)
+				err := proto.Unmarshal(msg.Body, req)
 				if err != nil {
-					app.Logger.Error("Unmarshal JSON ERROR, ", err)
+					app.Logger.Error("Unmarshal proto CreateShortenerMessage ERROR, ", err)
 				}
 
 				app.Logger.Info(fmt.Sprintf("[%s] Success Consume Message :", queueName), req)
 
-				err = dep.ShortController.ProcessCreateShortUser(app.Context, &req)
+				err = dep.ShortController.ProcessCreateShortUser(app.Context, req)
 				if err != nil {
 					app.Logger.Error("ProcessCreateShortUser ERROR, ", err)
 				}
 
 				app.Logger.Info(fmt.Sprintf("[%s] Success Process Message :", queueName), req)
 			case app.Config.RabbitMQ.QueueUpdateVisitor:
-				var req model.UpdateVisitorRequest
+				req := &shortenerpb.UpdateVisitorCountMessage{}
 
-				err := json.Unmarshal(msg.Body, &req)
+				err := proto.Unmarshal(msg.Body, req)
 				if err != nil {
-					app.Logger.Error("Unmarshal JSON ERROR, ", err)
+					app.Logger.Error("Unmarshal proto UpdateVisitorCountMessage ERROR, ", err)
 				}
 
 				app.Logger.Info(fmt.Sprintf("[%s] Success Consume Message :", queueName), req)
 
-				err = dep.ShortController.ProcessUpdateVisitorCount(app.Context, &req)
+				err = dep.ShortController.ProcessUpdateVisitorCount(app.Context, req)
 				if err != nil {
 					app.Logger.Error("ProcessUpdateVisitorCount ERROR, ", err)
 				}
