@@ -13,16 +13,16 @@ type Dependency struct {
 
 func SetupDependencyInjection(app *App) *Dependency {
 	// repository
-	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.DB)
-	authRepoImpl := repository.NewAuthRepository(app.Context, app.Config, app.Logger, app.DB)
+	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB)
+	authRepoImpl := repository.NewAuthRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB)
 
 	// service
-	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, healthCheckRepoImpl)
-	authSvcImpl := service.NewAuthService(app.Context, app.Config, app.Logger, authRepoImpl)
+	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, app.Tracer, healthCheckRepoImpl)
+	authSvcImpl := service.NewAuthService(app.Context, app.Config, app.Logger, app.Tracer, authRepoImpl)
 
 	// controller
-	healthCheckControllerImpl := controller.NewHealthCheckController(app.Context, app.Config, healthCheckSvcImpl)
-	authControllerImpl := controller.NewAuthController(app.Context, app.Config, app.Logger, authSvcImpl)
+	healthCheckControllerImpl := controller.NewHealthCheckController(app.Context, app.Config, app.Tracer, healthCheckSvcImpl)
+	authControllerImpl := controller.NewAuthController(app.Context, app.Config, app.Logger, app.Tracer, authSvcImpl)
 
 	return &Dependency{
 		HealthCheckController: healthCheckControllerImpl,

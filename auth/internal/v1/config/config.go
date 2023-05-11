@@ -4,14 +4,22 @@ import "github.com/PickHD/singkatin-revamp/auth/internal/v1/helper"
 
 type (
 	Configuration struct {
+		Server   *Server
 		Common   *Common
 		Database *Database
 		Secret   *Secret
+		Tracer   *Tracer
 	}
 
 	Common struct {
-		Port      int
 		JWTExpire int
+	}
+
+	Server struct {
+		AppPort int
+		AppEnv  string
+		AppName string
+		AppID   string
 	}
 
 	Database struct {
@@ -25,13 +33,22 @@ type (
 	Secret struct {
 		JWTSecret string
 	}
+
+	Tracer struct {
+		JaegerURL string
+	}
 )
 
 func loadConfiguration() *Configuration {
 	return &Configuration{
 		Common: &Common{
-			Port:      helper.GetEnvInt("APP_PORT"),
 			JWTExpire: helper.GetEnvInt("JWT_EXPIRE"),
+		},
+		Server: &Server{
+			AppPort: helper.GetEnvInt("APP_PORT"),
+			AppEnv:  helper.GetEnvString("APP_ENV"),
+			AppName: helper.GetEnvString("APP_NAME"),
+			AppID:   helper.GetEnvString("APP_ID"),
 		},
 		Database: &Database{
 			Port:                 helper.GetEnvInt("DB_PORT"),
@@ -42,6 +59,9 @@ func loadConfiguration() *Configuration {
 		},
 		Secret: &Secret{
 			JWTSecret: helper.GetEnvString("JWT_SECRET"),
+		},
+		Tracer: &Tracer{
+			JaegerURL: helper.GetEnvString("JAEGER_URL"),
 		},
 	}
 }
