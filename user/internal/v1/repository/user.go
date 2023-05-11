@@ -10,6 +10,8 @@ import (
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -24,23 +26,29 @@ type (
 		Context  context.Context
 		Config   *config.Configuration
 		Logger   *logrus.Logger
+		Tracer   *trace.TracerProvider
 		DB       *mongo.Database
 		RabbitMQ *amqp.Channel
 	}
 )
 
 // NewUserRepository return new instances user repository
-func NewUserRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, db *mongo.Database, amqp *amqp.Channel) *UserRepositoryImpl {
+func NewUserRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, db *mongo.Database, amqp *amqp.Channel) *UserRepositoryImpl {
 	return &UserRepositoryImpl{
 		Context:  ctx,
 		Config:   config,
 		Logger:   logger,
+		Tracer:   tracer,
 		DB:       db,
 		RabbitMQ: amqp,
 	}
 }
 
 func (ur *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	tr := otel.GetTracerProvider().Tracer("User-FindByEmail Repository")
+	_, span := tr.Start(ctx, "Start FindByEmail")
+	defer span.End()
+
 	user := model.User{}
 
 	err := ur.DB.Collection(ur.Config.Database.UsersCollection).FindOne(ctx, bson.D{{Key: "email", Value: email}}).Decode(&user)
@@ -57,6 +65,10 @@ func (ur *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*m
 }
 
 func (ur *UserRepositoryImpl) PublishCreateUserShortener(ctx context.Context, req *model.GenerateShortUserMessage) error {
+	tr := otel.GetTracerProvider().Tracer("User-PublishCreateUserShortener Repository")
+	_, span := tr.Start(ctx, "Start PublishCreateUserShortener")
+	defer span.End()
+
 	ur.Logger.Info("data req before publish", req)
 
 	b, err := json.Marshal(&req)
