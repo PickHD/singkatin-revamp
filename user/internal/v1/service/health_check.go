@@ -5,6 +5,8 @@ import (
 
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/repository"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -17,19 +19,25 @@ type (
 	HealthCheckServiceImpl struct {
 		Context         context.Context
 		Config          *config.Configuration
+		Tracer          *trace.TracerProvider
 		HealthCheckRepo repository.HealthCheckRepository
 	}
 )
 
 // NewHealthCheckService return new instances health check service
-func NewHealthCheckService(ctx context.Context, config *config.Configuration, healthCheckRepo repository.HealthCheckRepository) *HealthCheckServiceImpl {
+func NewHealthCheckService(ctx context.Context, config *config.Configuration, tracer *trace.TracerProvider, healthCheckRepo repository.HealthCheckRepository) *HealthCheckServiceImpl {
 	return &HealthCheckServiceImpl{
 		Context:         ctx,
 		Config:          config,
+		Tracer:          tracer,
 		HealthCheckRepo: healthCheckRepo,
 	}
 }
 
 func (hs *HealthCheckServiceImpl) Check() (bool, error) {
+	tr := otel.GetTracerProvider().Tracer("User-Check Service")
+	_, span := tr.Start(hs.Context, "Start Check")
+	defer span.End()
+
 	return hs.HealthCheckRepo.Check()
 }
