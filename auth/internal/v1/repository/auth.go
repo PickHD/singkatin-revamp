@@ -10,6 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -24,21 +26,27 @@ type (
 		Context context.Context
 		Config  *config.Configuration
 		Logger  *logrus.Logger
+		Tracer  *trace.TracerProvider
 		DB      *mongo.Database
 	}
 )
 
 // NewAuthRepository return new instances auth repository
-func NewAuthRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, db *mongo.Database) *AuthRepositoryImpl {
+func NewAuthRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, db *mongo.Database) *AuthRepositoryImpl {
 	return &AuthRepositoryImpl{
 		Context: ctx,
 		Config:  config,
 		Logger:  logger,
+		Tracer:  tracer,
 		DB:      db,
 	}
 }
 
 func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (*model.User, error) {
+	tr := otel.GetTracerProvider().Tracer("Auth-CreateUser repository")
+	_, span := tr.Start(ctx, "Start CreateUser")
+	defer span.End()
+
 	// check data users by email is already exists or not
 	err := ar.DB.Collection(ar.Config.Database.UsersCollection).FindOne(ctx, bson.D{{Key: "email", Value: req.Email}}).Err()
 	if err != nil {
@@ -74,6 +82,10 @@ func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (
 }
 
 func (ar *AuthRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+	tr := otel.GetTracerProvider().Tracer("Auth-FindByEmail repository")
+	_, span := tr.Start(ctx, "Start FindByEmail")
+	defer span.End()
+
 	user := model.User{}
 
 	err := ar.DB.Collection(ar.Config.Database.UsersCollection).FindOne(ctx, bson.D{{Key: "email", Value: email}}).Decode(&user)

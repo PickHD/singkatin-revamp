@@ -10,6 +10,8 @@ import (
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/repository"
 	"github.com/golang-jwt/jwt"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -24,21 +26,27 @@ type (
 		Context  context.Context
 		Config   *config.Configuration
 		Logger   *logrus.Logger
+		Tracer   *trace.TracerProvider
 		AuthRepo repository.AuthRepository
 	}
 )
 
 // NewAuthService return new instances auth service
-func NewAuthService(ctx context.Context, config *config.Configuration, logger *logrus.Logger, authRepo repository.AuthRepository) *AuthServiceImpl {
+func NewAuthService(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, authRepo repository.AuthRepository) *AuthServiceImpl {
 	return &AuthServiceImpl{
 		Context:  ctx,
 		Config:   config,
 		Logger:   logger,
+		Tracer:   tracer,
 		AuthRepo: authRepo,
 	}
 }
 
 func (as *AuthServiceImpl) RegisterUser(ctx context.Context, req *model.RegisterRequest) (*model.RegisterResponse, error) {
+	tr := otel.GetTracerProvider().Tracer("Auth-RegisterUser service")
+	_, span := tr.Start(ctx, "Start RegisterUser")
+	defer span.End()
+
 	err := validateRegisterUser(req)
 	if err != nil {
 		return nil, err
@@ -65,6 +73,10 @@ func (as *AuthServiceImpl) RegisterUser(ctx context.Context, req *model.Register
 }
 
 func (as *AuthServiceImpl) LoginUser(ctx context.Context, req *model.LoginRequest) (*model.LoginResponse, error) {
+	tr := otel.GetTracerProvider().Tracer("Auth-LoginUser service")
+	_, span := tr.Start(ctx, "Start LoginUser")
+	defer span.End()
+
 	err := validateLoginUser(req)
 	if err != nil {
 		return nil, err

@@ -11,6 +11,8 @@ import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -26,16 +28,18 @@ type (
 		Context context.Context
 		Config  *config.Configuration
 		Logger  *logrus.Logger
+		Tracer  *trace.TracerProvider
 		UserSvc service.UserService
 	}
 )
 
 // NewUserController return new instances user controller
-func NewUserController(ctx context.Context, config *config.Configuration, logger *logrus.Logger, userSvc service.UserService) *UserControllerImpl {
+func NewUserController(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, userSvc service.UserService) *UserControllerImpl {
 	return &UserControllerImpl{
 		Context: ctx,
 		Config:  config,
 		Logger:  logger,
+		Tracer:  tracer,
 		UserSvc: userSvc,
 	}
 }
@@ -51,6 +55,10 @@ func NewUserController(ctx context.Context, config *config.Configuration, logger
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /me [get]
 func (uc *UserControllerImpl) Profile(ctx *fiber.Ctx) error {
+	tr := otel.GetTracerProvider().Tracer("User-Profile Controller")
+	_, span := tr.Start(uc.Context, "Start Profile")
+	defer span.End()
+
 	data := ctx.Locals(model.KeyJWTValidAccess)
 	extData, err := middleware.Extract(data)
 	if err != nil {
@@ -79,6 +87,10 @@ func (uc *UserControllerImpl) Profile(ctx *fiber.Ctx) error {
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /dashboard [get]
 func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
+	tr := otel.GetTracerProvider().Tracer("User-Dashboard Controller")
+	_, span := tr.Start(uc.Context, "Start Dashboard")
+	defer span.End()
+
 	data := ctx.Locals(model.KeyJWTValidAccess)
 	extData, err := middleware.Extract(data)
 	if err != nil {
@@ -105,6 +117,10 @@ func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /short/generate [post]
 func (uc *UserControllerImpl) GenerateShort(ctx *fiber.Ctx) error {
+	tr := otel.GetTracerProvider().Tracer("User-GenerateShort Controller")
+	_, span := tr.Start(uc.Context, "Start GenerateShort")
+	defer span.End()
+
 	var req model.GenerateShortUserRequest
 
 	data := ctx.Locals(model.KeyJWTValidAccess)

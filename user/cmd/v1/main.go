@@ -60,7 +60,7 @@ func main() {
 	go func() {
 		_ = <-c
 		app.Logger.Info("SERVER SHUTDOWN GRACEFULLY")
-		app.Close()
+		app.Close(app.Context)
 		_ = app.Application.Shutdown()
 		serverShutdown <- struct{}{}
 	}()
@@ -71,7 +71,7 @@ func main() {
 			httpServer = infrastructure.ServeHTTP(app)
 		)
 
-		if err := httpServer.Listen(fmt.Sprintf(":%d", app.Config.Common.Port)); err != nil {
+		if err := httpServer.Listen(fmt.Sprintf(":%d", app.Config.Server.AppPort)); err != nil {
 			app.Logger.Error("Failed to to start server. Error: ", err)
 			panic(err)
 		}

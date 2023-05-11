@@ -14,6 +14,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -33,6 +35,7 @@ type (
 		Context  context.Context
 		Config   *config.Configuration
 		Logger   *logrus.Logger
+		Tracer   *trace.TracerProvider
 		DB       *mongo.Database
 		Redis    *redis.Client
 		RabbitMQ *amqp.Channel
@@ -40,11 +43,12 @@ type (
 )
 
 // NewShortRepository return new instances short repository
-func NewShortRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, db *mongo.Database, rds *redis.Client, amqp *amqp.Channel) *ShortRepositoryImpl {
+func NewShortRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, db *mongo.Database, rds *redis.Client, amqp *amqp.Channel) *ShortRepositoryImpl {
 	return &ShortRepositoryImpl{
 		Context:  ctx,
 		Config:   config,
 		Logger:   logger,
+		Tracer:   tracer,
 		DB:       db,
 		Redis:    rds,
 		RabbitMQ: amqp,
@@ -52,6 +56,10 @@ func NewShortRepository(ctx context.Context, config *config.Configuration, logge
 }
 
 func (sr *ShortRepositoryImpl) GetListShortenerByUserID(ctx context.Context, userID string) ([]model.Short, error) {
+	tr := otel.GetTracerProvider().Tracer("Shortener-GetListShortenerByUserID Repository")
+	ctx, span := tr.Start(ctx, "Start GetListShortenerByUserID")
+	defer span.End()
+
 	shorts := []model.Short{}
 
 	cur, err := sr.DB.Collection(sr.Config.Database.ShortenersCollection).Find(ctx,
@@ -82,6 +90,10 @@ func (sr *ShortRepositoryImpl) GetListShortenerByUserID(ctx context.Context, use
 }
 
 func (sr *ShortRepositoryImpl) Create(ctx context.Context, req *model.Short) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-Create Repository")
+	ctx, span := tr.Start(ctx, "Start Create")
+	defer span.End()
+
 	_, err := sr.DB.Collection(sr.Config.Database.ShortenersCollection).InsertOne(ctx,
 		bson.D{{Key: "full_url", Value: req.FullURL},
 			{Key: "user_id", Value: req.UserID},
@@ -96,6 +108,10 @@ func (sr *ShortRepositoryImpl) Create(ctx context.Context, req *model.Short) err
 }
 
 func (sr *ShortRepositoryImpl) GetByShortURL(ctx context.Context, shortURL string) (*model.Short, error) {
+	tr := otel.GetTracerProvider().Tracer("Shortener-GetByShortURL Repository")
+	ctx, span := tr.Start(ctx, "Start GetByShortURL")
+	defer span.End()
+
 	short := &model.Short{}
 
 	err := sr.DB.Collection(sr.Config.Database.ShortenersCollection).FindOne(ctx, bson.D{{Key: "short_url", Value: shortURL}}).Decode(&short)
@@ -112,6 +128,10 @@ func (sr *ShortRepositoryImpl) GetByShortURL(ctx context.Context, shortURL strin
 }
 
 func (sr *ShortRepositoryImpl) GetFullURLByKey(ctx context.Context, shortURL string) (string, error) {
+	tr := otel.GetTracerProvider().Tracer("Shortener-GetFullURLByKey Repository")
+	ctx, span := tr.Start(ctx, "Start GetFullURLByKey")
+	defer span.End()
+
 	result := sr.Redis.Get(ctx, fmt.Sprintf(model.KeyShortURL, shortURL))
 	if result.Err() != nil {
 		sr.Logger.Error("ShortRepositoryImpl.GetFullURLByKey Get ERROR, ", result.Err())
@@ -123,6 +143,10 @@ func (sr *ShortRepositoryImpl) GetFullURLByKey(ctx context.Context, shortURL str
 }
 
 func (sr *ShortRepositoryImpl) SetFullURLByKey(ctx context.Context, shortURL string, fullURL string, duration time.Duration) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-SetFullURLByKey Repository")
+	ctx, span := tr.Start(ctx, "Start SetFullURLByKey")
+	defer span.End()
+
 	err := sr.Redis.SetEx(ctx, fmt.Sprintf(model.KeyShortURL, shortURL), fullURL, duration).Err()
 	if err != nil {
 		sr.Logger.Error("ShortRepositoryImpl.SetFullURLByKey SetEx ERROR, ", err)
@@ -134,6 +158,10 @@ func (sr *ShortRepositoryImpl) SetFullURLByKey(ctx context.Context, shortURL str
 }
 
 func (sr *ShortRepositoryImpl) PublishUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-PublishUpdateVisitorCount Repository")
+	_, span := tr.Start(ctx, "Start PublishUpdateVisitorCount")
+	defer span.End()
+
 	sr.Logger.Info("data req before publish", req)
 
 	b, err := json.Marshal(&req)
@@ -165,6 +193,10 @@ func (sr *ShortRepositoryImpl) PublishUpdateVisitorCount(ctx context.Context, re
 }
 
 func (sr *ShortRepositoryImpl) UpdateVisitorByShortURL(ctx context.Context, req *model.UpdateVisitorRequest, lastVisitedCount int64) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-UpdateVisitorByShortURL Repository")
+	ctx, span := tr.Start(ctx, "Start UpdateVisitorByShortURL")
+	defer span.End()
+
 	_, err := sr.DB.Collection(sr.Config.Database.ShortenersCollection).UpdateOne(ctx,
 		bson.D{{Key: "short_url", Value: req.ShortURL}}, bson.M{
 			"$set": bson.D{{Key: "visited", Value: lastVisitedCount + 1}, {Key: "updated_at", Value: time.Now()}},
