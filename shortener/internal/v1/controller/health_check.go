@@ -8,6 +8,8 @@ import (
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/helper"
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/service"
 	"github.com/labstack/echo/v4"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -20,15 +22,17 @@ type (
 	HealthCheckControllerImpl struct {
 		Context        context.Context
 		Config         *config.Configuration
+		Tracer         *trace.TracerProvider
 		HealthCheckSvc service.HealthCheckService
 	}
 )
 
 // NewHealthCheckController return new instances health check controller
-func NewHealthCheckController(ctx context.Context, config *config.Configuration, healthCheckSvc service.HealthCheckService) *HealthCheckControllerImpl {
+func NewHealthCheckController(ctx context.Context, config *config.Configuration, tracer *trace.TracerProvider, healthCheckSvc service.HealthCheckService) *HealthCheckControllerImpl {
 	return &HealthCheckControllerImpl{
 		Context:        ctx,
 		Config:         config,
+		Tracer:         tracer,
 		HealthCheckSvc: healthCheckSvc,
 	}
 }
@@ -42,6 +46,10 @@ func NewHealthCheckController(ctx context.Context, config *config.Configuration,
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /health-check [get]
 func (hc *HealthCheckControllerImpl) Check(ctx echo.Context) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-Check Controller")
+	_, span := tr.Start(hc.Context, "Start Check")
+	defer span.End()
+
 	ok, err := hc.HealthCheckSvc.Check()
 	if err != nil || !ok {
 		return helper.NewResponses[any](ctx, http.StatusInternalServerError, "not OK", ok, err, nil)

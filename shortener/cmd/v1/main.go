@@ -67,7 +67,7 @@ func main() {
 		)
 
 		server := &http.Server{
-			Addr:    fmt.Sprintf(":%d", app.Config.Common.Port),
+			Addr:    fmt.Sprintf(":%d", app.Config.Server.AppPort),
 			Handler: httpServer,
 		}
 
@@ -89,7 +89,7 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		app.Close()
+		app.Close(ctx)
 
 		// Shutdown the server gracefully
 		if err := server.Shutdown(ctx); err != nil {
