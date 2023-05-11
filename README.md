@@ -12,9 +12,11 @@ Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin
 5. Using RPC for service interactions
 
 ## Main Features : 
-1. Authentications Supports using JWT
-2. User Profiles
-3. User Dashboard (can analyze how much visitor / users click the short links)
+1. Register
+2. Login
+3. User Profiles
+4. User Dashboard (can analyze how much visitor / users click the short links)
+5. Shortener Link Redirect
 
 ## Tech Used :
 1. Golang _(Every services using different framework due experimenting performances.)_
@@ -43,3 +45,11 @@ _(make sure docker & docker-compose installed)_
     ```
     $ make remove
     ```
+   
+   
+## Next Features (In Development) : 
+- Email Verification Register 🕘
+- Forgot Password 🕘
+- Edit Profile 🕘
+- Upload Avatar Users 🕘
+- User Shorteners Advance Management 🕘
