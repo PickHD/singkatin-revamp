@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/model"
+	shortenerpb "github.com/PickHD/singkatin-revamp/shortener/pkg/api/v1/proto/shortener"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/protobuf/proto"
 )
 
 type (
@@ -164,15 +165,18 @@ func (sr *ShortRepositoryImpl) PublishUpdateVisitorCount(ctx context.Context, re
 
 	sr.Logger.Info("data req before publish", req)
 
-	b, err := json.Marshal(&req)
+	// transform data to proto
+	msg := sr.prepareProtoPublishUpdateVisitorCountMessage(req)
+
+	b, err := proto.Marshal(msg)
 	if err != nil {
-		sr.Logger.Error("ShortRepositoryImpl.PublishUpdateVisitorCount Marshal JSON ERROR, ", err)
+		sr.Logger.Error("ShortRepositoryImpl.PublishUpdateVisitorCount Marshal proto UpdateVisitorCountMessage ERROR, ", err)
 		return err
 	}
 
 	message := amqp.Publishing{
-		ContentType: "application/json",
-		Body:        b,
+		ContentType: "text/plain",
+		Body:        []byte(b),
 	}
 
 	// Attempt to publish a message to the queue.
@@ -207,4 +211,10 @@ func (sr *ShortRepositoryImpl) UpdateVisitorByShortURL(ctx context.Context, req 
 	}
 
 	return nil
+}
+
+func (sr *ShortRepositoryImpl) prepareProtoPublishUpdateVisitorCountMessage(req *model.UpdateVisitorRequest) *shortenerpb.UpdateVisitorCountMessage {
+	return &shortenerpb.UpdateVisitorCountMessage{
+		ShortUrl: req.ShortURL,
+	}
 }

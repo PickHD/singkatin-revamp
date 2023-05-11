@@ -23,3 +23,12 @@ message ListShortenerResponse {
     repeated Shortener shorteners=1;
 }
 
+message CreateShortenerMessage {
+    string user_id=1;
+    string full_url=2;
+    string short_url=3;
+}
+
+message UpdateVisitorCountMessage {
+    string short_url=1;
+}

@@ -2,16 +2,17 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/model"
+	shortenerpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/protobuf/proto"
 )
 
 type (
@@ -71,15 +72,18 @@ func (ur *UserRepositoryImpl) PublishCreateUserShortener(ctx context.Context, re
 
 	ur.Logger.Info("data req before publish", req)
 
-	b, err := json.Marshal(&req)
+	// transform data to proto
+	msg := ur.prepareProtoPublishCreateUserShortenerMessage(req)
+
+	b, err := proto.Marshal(msg)
 	if err != nil {
-		ur.Logger.Error("UserRepositoryImpl.PublishCreateUserShortener Marshal JSON ERROR, ", err)
+		ur.Logger.Error("UserRepositoryImpl.PublishCreateUserShortener Marshal proto CreateShortenerMessage ERROR, ", err)
 		return err
 	}
 
 	message := amqp.Publishing{
-		ContentType: "application/json",
-		Body:        b,
+		ContentType: "text/plain",
+		Body:        []byte(b),
 	}
 
 	// Attempt to publish a message to the queue.
@@ -97,4 +101,12 @@ func (ur *UserRepositoryImpl) PublishCreateUserShortener(ctx context.Context, re
 	ur.Logger.Info("Success Publish User Shortener to Queue: ", ur.Config.RabbitMQ.QueueCreateShortener)
 
 	return nil
+}
+
+func (ur *UserRepositoryImpl) prepareProtoPublishCreateUserShortenerMessage(req *model.GenerateShortUserMessage) *shortenerpb.CreateShortenerMessage {
+	return &shortenerpb.CreateShortenerMessage{
+		FullUrl:  req.FullURL,
+		UserId:   req.UserID,
+		ShortUrl: req.ShortURL,
+	}
 }
