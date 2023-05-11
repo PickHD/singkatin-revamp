@@ -29,6 +29,17 @@ services:
       - singkatin-dev
     volumes:
         - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    networks:
+      - singkatin-dev
   auth-service-http:
     container_name: auth-service-http
     build:
@@ -42,8 +53,10 @@ services:
     restart: unless-stopped
     depends_on:
       - mongo
+      - jaeger
     links:
       - mongo
+      - jaeger
   shortener-service-http:
     container_name: shortener-service-http
     build:
@@ -59,10 +72,12 @@ services:
       - mongo
       - redis
       - amqp
+      - jaeger
     links:
       - mongo
       - redis
       - amqp
+      - jaeger
   shortener-service-grpc:
     container_name: shortener-service-grpc
     build:
@@ -78,10 +93,12 @@ services:
       - mongo
       - redis
       - amqp
+      - jaeger
     links:
       - mongo
       - redis
       - amqp
+      - jaeger
   shortener-service-consumer:
     container_name: shortener-service-consumer
     build:
@@ -95,10 +112,12 @@ services:
       - mongo
       - redis
       - amqp
+      - jaeger
     links:
       - mongo
       - redis
       - amqp
+      - jaeger
   user-service-http:
     container_name: user-service-http
     build:
@@ -114,10 +133,12 @@ services:
       - mongo
       - redis
       - amqp
+      - jaeger
     links:
       - mongo
       - redis
       - amqp
+      - jaeger
 networks:
   singkatin-dev:
     driver: bridge
