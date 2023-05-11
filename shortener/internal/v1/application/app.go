@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/config"
 	"github.com/labstack/echo/v4"
@@ -12,6 +13,12 @@ import (
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"google.golang.org/grpc"
 )
 
@@ -25,6 +32,7 @@ type App struct {
 	Redis       *redis.Client
 	RabbitMQ    *amqp.Channel
 	GRPC        *grpc.Server
+	Tracer      *trace.TracerProvider
 }
 
 // SetupApplication configuring dependencies app needed
@@ -43,6 +51,15 @@ func SetupApplication(ctx context.Context) (*App, error) {
 	logWithLogrus.Formatter = &logrus.JSONFormatter{}
 	logWithLogrus.ReportCaller = true
 	app.Logger = logWithLogrus
+
+	// initialize tracers
+	app.Tracer, err = initJaegerTracerProvider(app.Config)
+	if err != nil {
+		app.Logger.Error("failed init Jaeger Tracer", err)
+		return app, nil
+	}
+
+	otel.SetTracerProvider(app.Tracer)
 
 	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%d", app.Config.Database.Host, app.Config.Database.Port)))
 	if err != nil {
@@ -105,12 +122,12 @@ func SetupApplication(ctx context.Context) (*App, error) {
 }
 
 // Close method will close any instances before app terminated
-func (a *App) Close() {
+func (a *App) Close(ctx context.Context) {
 	a.Logger.Info("APP CLOSED SUCCESSFULLY")
 
-	defer func() {
+	defer func(ctx context.Context) {
 		if a.DB != nil {
-			if err := a.DB.Client().Disconnect(a.Context); err != nil {
+			if err := a.DB.Client().Disconnect(ctx); err != nil {
 				panic(err)
 			}
 		}
@@ -120,5 +137,35 @@ func (a *App) Close() {
 				panic(err)
 			}
 		}
-	}()
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+		defer cancel()
+		if err := a.Tracer.Shutdown(ctx); err != nil {
+			panic(err)
+		}
+	}(ctx)
+}
+
+// initJaegerTracerProvider returns an OpenTelemetry TracerProvider configured to use
+// the Jaeger exporter that will send spans to the provided url. The returned
+// TracerProvider will also use a Resource configured with all the information
+// about the application.
+func initJaegerTracerProvider(cfg *config.Configuration) (*trace.TracerProvider, error) {
+	// Create the Jaeger exporter
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(cfg.Tracer.JaegerURL)))
+	if err != nil {
+		return nil, err
+	}
+	tp := trace.NewTracerProvider(
+		// Always be sure to batch in production.
+		trace.WithBatcher(exp),
+		// Record information about this application in a Resource.
+		trace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName(cfg.Server.AppName),
+			attribute.String("environment", cfg.Server.AppEnv),
+			attribute.String("ID", cfg.Server.AppID),
+		)),
+	)
+	return tp, nil
 }

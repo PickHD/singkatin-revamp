@@ -13,16 +13,16 @@ type Dependency struct {
 
 func SetupDependencyInjection(app *App) *Dependency {
 	// repository
-	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.DB, app.Redis)
-	shortRepoImpl := repository.NewShortRepository(app.Context, app.Config, app.Logger, app.DB, app.Redis, app.RabbitMQ)
+	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB, app.Redis)
+	shortRepoImpl := repository.NewShortRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB, app.Redis, app.RabbitMQ)
 
 	// service
-	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, healthCheckRepoImpl)
-	shortSvcImpl := service.NewShortService(app.Context, app.Config, app.Logger, shortRepoImpl)
+	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, app.Tracer, healthCheckRepoImpl)
+	shortSvcImpl := service.NewShortService(app.Context, app.Config, app.Logger, app.Tracer, shortRepoImpl)
 
 	// controller
-	healthCheckControllerImpl := controller.NewHealthCheckController(app.Context, app.Config, healthCheckSvcImpl)
-	shortControllerImpl := controller.NewShortController(app.Context, app.Config, app.Logger, shortSvcImpl)
+	healthCheckControllerImpl := controller.NewHealthCheckController(app.Context, app.Config, app.Tracer, healthCheckSvcImpl)
+	shortControllerImpl := controller.NewShortController(app.Context, app.Config, app.Logger, app.Tracer, shortSvcImpl)
 
 	return &Dependency{
 		HealthCheckController: healthCheckControllerImpl,
