@@ -10,6 +10,8 @@ import (
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/repository"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -26,21 +28,27 @@ type (
 		Context   context.Context
 		Config    *config.Configuration
 		Logger    *logrus.Logger
+		Tracer    *trace.TracerProvider
 		ShortRepo repository.ShortRepository
 	}
 )
 
 // NewShortService return new instances short service
-func NewShortService(ctx context.Context, config *config.Configuration, logger *logrus.Logger, shortRepo repository.ShortRepository) *ShortServiceImpl {
+func NewShortService(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, shortRepo repository.ShortRepository) *ShortServiceImpl {
 	return &ShortServiceImpl{
 		Context:   ctx,
 		Config:    config,
 		Logger:    logger,
+		Tracer:    tracer,
 		ShortRepo: shortRepo,
 	}
 }
 
 func (ss *ShortServiceImpl) GetListShortenerByUserID(ctx context.Context, userID string) ([]model.Short, error) {
+	tr := otel.GetTracerProvider().Tracer("Shortener-GetListShortenerByUserID Service")
+	ctx, span := tr.Start(ctx, "Start GetListShortenerByUserID")
+	defer span.End()
+
 	data, err := ss.ShortRepo.GetListShortenerByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -50,6 +58,10 @@ func (ss *ShortServiceImpl) GetListShortenerByUserID(ctx context.Context, userID
 }
 
 func (ss *ShortServiceImpl) CreateShort(ctx context.Context, req *model.CreateShortRequest) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-CreateShort Service")
+	ctx, span := tr.Start(ctx, "Start CreateShort")
+	defer span.End()
+
 	err := ss.validateCreateShort(req)
 	if err != nil {
 		return err
@@ -67,6 +79,10 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 		redisTTLDuration = time.Minute * time.Duration(ss.Config.Redis.TTL)
 	)
 
+	tr := otel.GetTracerProvider().Tracer("Shortener-ClickShort Service")
+	ctx, span := tr.Start(ss.Context, "Start ClickShort")
+	defer span.End()
+
 	req := &model.UpdateVisitorRequest{ShortURL: shortURL}
 
 	err := ss.validateClickShort(req)
@@ -74,7 +90,7 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 		return nil, err
 	}
 
-	cachedFullURL, err := ss.ShortRepo.GetFullURLByKey(ss.Context, req.ShortURL)
+	cachedFullURL, err := ss.ShortRepo.GetFullURLByKey(ctx, req.ShortURL)
 	if err != nil {
 		if err == redis.Nil {
 			ss.Logger.Info("get data from default databases....")
@@ -102,7 +118,7 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 
 	ss.Logger.Info("get data from caching....")
 
-	err = ss.ShortRepo.PublishUpdateVisitorCount(ss.Context, req)
+	err = ss.ShortRepo.PublishUpdateVisitorCount(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +127,11 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 }
 
 func (ss *ShortServiceImpl) UpdateVisitorShort(ctx context.Context, req *model.UpdateVisitorRequest) error {
-	data, err := ss.ShortRepo.GetByShortURL(ss.Context, req.ShortURL)
+	tr := otel.GetTracerProvider().Tracer("Shortener-UpdateVisitorShort Service")
+	ctx, span := tr.Start(ctx, "Start UpdateVisitorShort")
+	defer span.End()
+
+	data, err := ss.ShortRepo.GetByShortURL(ctx, req.ShortURL)
 	if err != nil {
 		return err
 	}

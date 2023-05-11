@@ -9,6 +9,8 @@ import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/repository"
 	shortenerpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -24,27 +26,37 @@ type (
 		Context      context.Context
 		Config       *config.Configuration
 		Logger       *logrus.Logger
+		Tracer       *trace.TracerProvider
 		UserRepo     repository.UserRepository
 		ShortClients shortenerpb.ShortenerServiceClient
 	}
 )
 
 // NewUserService return new instances user service
-func NewUserService(ctx context.Context, config *config.Configuration, logger *logrus.Logger, userRepo repository.UserRepository, shortClients shortenerpb.ShortenerServiceClient) *UserServiceImpl {
+func NewUserService(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, userRepo repository.UserRepository, shortClients shortenerpb.ShortenerServiceClient) *UserServiceImpl {
 	return &UserServiceImpl{
 		Context:      ctx,
 		Config:       config,
 		Logger:       logger,
+		Tracer:       tracer,
 		UserRepo:     userRepo,
 		ShortClients: shortClients,
 	}
 }
 
 func (us *UserServiceImpl) GetUserDetail(email string) (*model.User, error) {
+	tr := otel.GetTracerProvider().Tracer("User-GetUserDetail Service")
+	_, span := tr.Start(us.Context, "Start GetUserDetail")
+	defer span.End()
+
 	return us.UserRepo.FindByEmail(us.Context, email)
 }
 
 func (us *UserServiceImpl) GetUserShorts(userID string) ([]model.UserShorts, error) {
+	tr := otel.GetTracerProvider().Tracer("User-GetUserShorts Service")
+	_, span := tr.Start(us.Context, "Start GetUserShorts")
+	defer span.End()
+
 	data, err := us.ShortClients.GetListShortenerByUserID(us.Context, &shortenerpb.ListShortenerRequest{
 		UserId: userID})
 	if err != nil {
@@ -71,6 +83,10 @@ func (us *UserServiceImpl) GetUserShorts(userID string) ([]model.UserShorts, err
 }
 
 func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error) {
+	tr := otel.GetTracerProvider().Tracer("User-GenerateUserShorts Service")
+	_, span := tr.Start(us.Context, "Start GenerateUserShorts")
+	defer span.End()
+
 	msg := model.GenerateShortUserMessage{
 		FullURL:  req.FullURL,
 		UserID:   userID,

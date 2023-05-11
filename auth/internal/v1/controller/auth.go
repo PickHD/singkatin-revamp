@@ -11,6 +11,8 @@ import (
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/service"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type (
@@ -25,16 +27,18 @@ type (
 		Context context.Context
 		Config  *config.Configuration
 		Logger  *logrus.Logger
+		Tracer  *trace.TracerProvider
 		AuthSvc service.AuthService
 	}
 )
 
 // NewAuthController return new instances auth controller
-func NewAuthController(ctx context.Context, config *config.Configuration, logger *logrus.Logger, authSvc service.AuthService) *AuthControllerImpl {
+func NewAuthController(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, authSvc service.AuthService) *AuthControllerImpl {
 	return &AuthControllerImpl{
 		Context: ctx,
 		Config:  config,
 		Logger:  logger,
+		Tracer:  tracer,
 		AuthSvc: authSvc,
 	}
 }
@@ -51,6 +55,10 @@ func NewAuthController(ctx context.Context, config *config.Configuration, logger
 // @Router       /register [post]
 func (ac *AuthControllerImpl) Register(ctx *gin.Context) {
 	var req model.RegisterRequest
+
+	tr := otel.GetTracerProvider().Tracer("Auth-Register Controller")
+	_, span := tr.Start(ctx, "Start Register")
+	defer span.End()
 
 	if err := ctx.BindJSON(&req); err != nil {
 		helper.NewResponses[any](ctx, http.StatusBadRequest, "Invalid request", req, err, nil)
@@ -84,6 +92,10 @@ func (ac *AuthControllerImpl) Register(ctx *gin.Context) {
 // @Router       /login [post]
 func (ac *AuthControllerImpl) Login(ctx *gin.Context) {
 	var req model.LoginRequest
+
+	tr := otel.GetTracerProvider().Tracer("Auth-Login Controller")
+	_, span := tr.Start(ctx, "Start Login")
+	defer span.End()
 
 	if err := ctx.BindJSON(&req); err != nil {
 		helper.NewResponses[any](ctx, http.StatusBadRequest, "Invalid request", req, err, nil)

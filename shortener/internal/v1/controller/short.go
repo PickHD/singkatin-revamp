@@ -12,6 +12,8 @@ import (
 	shortenerpb "github.com/PickHD/singkatin-revamp/shortener/pkg/api/v1/proto/shortener"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -35,22 +37,28 @@ type (
 		Context  context.Context
 		Config   *config.Configuration
 		Logger   *logrus.Logger
+		Tracer   *trace.TracerProvider
 		ShortSvc service.ShortService
 		shortenerpb.UnimplementedShortenerServiceServer
 	}
 )
 
 // NewShortController return new instances short controller
-func NewShortController(ctx context.Context, config *config.Configuration, logger *logrus.Logger, shortSvc service.ShortService) *ShortControllerImpl {
+func NewShortController(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, shortSvc service.ShortService) *ShortControllerImpl {
 	return &ShortControllerImpl{
 		Context:  ctx,
 		Config:   config,
 		Logger:   logger,
+		Tracer:   tracer,
 		ShortSvc: shortSvc,
 	}
 }
 
 func (sc *ShortControllerImpl) GetListShortenerByUserID(ctx context.Context, req *shortenerpb.ListShortenerRequest) (*shortenerpb.ListShortenerResponse, error) {
+	tr := otel.GetTracerProvider().Tracer("Shortener-GetListShortenerByUserID Controller")
+	_, span := tr.Start(ctx, "Start GetListShortenerByUserID")
+	defer span.End()
+
 	data, err := sc.ShortSvc.GetListShortenerByUserID(ctx, req.GetUserId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed Get List Shortener By UserID %s", err.Error())
@@ -88,6 +96,10 @@ func (sc *ShortControllerImpl) GetListShortenerByUserID(ctx context.Context, req
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /{short_url} [get]
 func (sc *ShortControllerImpl) ClickShortener(ctx echo.Context) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-ClickShortener Controller")
+	_, span := tr.Start(sc.Context, "Start ClickShortener")
+	defer span.End()
+
 	data, err := sc.ShortSvc.ClickShort(ctx.Param("short_url"))
 	if err != nil {
 		if strings.Contains(err.Error(), string(model.Validation)) {
@@ -105,6 +117,10 @@ func (sc *ShortControllerImpl) ClickShortener(ctx echo.Context) error {
 }
 
 func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, req *model.CreateShortRequest) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-ProcessCreateShortUser Controller")
+	_, span := tr.Start(sc.Context, "Start ProcessCreateShortUser")
+	defer span.End()
+
 	err := sc.ShortSvc.CreateShort(ctx, req)
 	if err != nil {
 		return model.NewError(model.Internal, err.Error())
@@ -114,6 +130,10 @@ func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, req *
 }
 
 func (sc *ShortControllerImpl) ProcessUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error {
+	tr := otel.GetTracerProvider().Tracer("Shortener-ProcessUpdateVisitorCount Controller")
+	_, span := tr.Start(sc.Context, "Start ProcessUpdateVisitorCount")
+	defer span.End()
+
 	err := sc.ShortSvc.UpdateVisitorShort(ctx, req)
 	if err != nil {
 		return model.NewError(model.Internal, err.Error())
