@@ -28,8 +28,8 @@ type (
 		ClickShortener(ctx echo.Context) error
 
 		// rabbitmq
-		ProcessCreateShortUser(ctx context.Context, req *model.CreateShortRequest) error
-		ProcessUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error
+		ProcessCreateShortUser(ctx context.Context, msg *shortenerpb.CreateShortenerMessage) error
+		ProcessUpdateVisitorCount(ctx context.Context, msg *shortenerpb.UpdateVisitorCountMessage) error
 	}
 
 	// ShortControllerImpl is an app short struct that consists of all the dependencies needed for short controller
@@ -116,10 +116,16 @@ func (sc *ShortControllerImpl) ClickShortener(ctx echo.Context) error {
 	return ctx.Redirect(http.StatusTemporaryRedirect, data.FullURL)
 }
 
-func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, req *model.CreateShortRequest) error {
+func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, msg *shortenerpb.CreateShortenerMessage) error {
 	tr := otel.GetTracerProvider().Tracer("Shortener-ProcessCreateShortUser Controller")
 	_, span := tr.Start(sc.Context, "Start ProcessCreateShortUser")
 	defer span.End()
+
+	req := &model.CreateShortRequest{
+		UserID:   msg.GetUserId(),
+		FullURL:  msg.GetFullUrl(),
+		ShortURL: msg.GetShortUrl(),
+	}
 
 	err := sc.ShortSvc.CreateShort(ctx, req)
 	if err != nil {
@@ -129,10 +135,14 @@ func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, req *
 	return nil
 }
 
-func (sc *ShortControllerImpl) ProcessUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error {
+func (sc *ShortControllerImpl) ProcessUpdateVisitorCount(ctx context.Context, msg *shortenerpb.UpdateVisitorCountMessage) error {
 	tr := otel.GetTracerProvider().Tracer("Shortener-ProcessUpdateVisitorCount Controller")
 	_, span := tr.Start(sc.Context, "Start ProcessUpdateVisitorCount")
 	defer span.End()
+
+	req := &model.UpdateVisitorRequest{
+		ShortURL: msg.GetShortUrl(),
+	}
 
 	err := sc.ShortSvc.UpdateVisitorShort(ctx, req)
 	if err != nil {
