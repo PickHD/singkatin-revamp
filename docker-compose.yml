@@ -54,9 +54,11 @@ services:
     depends_on:
       - mongo
       - jaeger
+      - redis
     links:
       - mongo
       - jaeger
+      - redis
   shortener-service-http:
     container_name: shortener-service-http
     build:
