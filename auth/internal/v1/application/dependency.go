@@ -13,12 +13,12 @@ type Dependency struct {
 
 func SetupDependencyInjection(app *App) *Dependency {
 	// repository
-	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB)
-	authRepoImpl := repository.NewAuthRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB)
+	healthCheckRepoImpl := repository.NewHealthCheckRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB, app.Redis)
+	authRepoImpl := repository.NewAuthRepository(app.Context, app.Config, app.Logger, app.Tracer, app.DB, app.Redis)
 
 	// service
 	healthCheckSvcImpl := service.NewHealthCheckService(app.Context, app.Config, app.Tracer, healthCheckRepoImpl)
-	authSvcImpl := service.NewAuthService(app.Context, app.Config, app.Logger, app.Tracer, authRepoImpl)
+	authSvcImpl := service.NewAuthService(app.Context, app.Config, app.Logger, app.Tracer, app.Mailer, authRepoImpl)
 
 	// controller
 	healthCheckControllerImpl := controller.NewHealthCheckController(app.Context, app.Config, app.Tracer, healthCheckSvcImpl)
