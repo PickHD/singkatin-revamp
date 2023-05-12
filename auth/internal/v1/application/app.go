@@ -2,12 +2,14 @@ package application
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"time"
 
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	trace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"gopkg.in/gomail.v2"
 )
 
 // App ...
@@ -26,7 +29,9 @@ type App struct {
 	Config      *config.Configuration
 	Logger      *logrus.Logger
 	DB          *mongo.Database
+	Redis       *redis.Client
 	Tracer      *trace.TracerProvider
+	Mailer      *gomail.Dialer
 }
 
 // SetupApplication configuring dependencies app needed
@@ -55,6 +60,10 @@ func SetupApplication(ctx context.Context) (*App, error) {
 
 	otel.SetTracerProvider(app.Tracer)
 
+	// initialize mailer
+	app.Logger.Info(app.Config.Mailer)
+	app.Mailer = initSMTPMailDialer(app.Config)
+
 	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%d", app.Config.Database.Host, app.Config.Database.Port)))
 	if err != nil {
 		app.Logger.Error("failed connect mongoDB, error :", err)
@@ -63,6 +72,13 @@ func SetupApplication(ctx context.Context) (*App, error) {
 
 	db := mongoClient.Database(app.Config.Database.Name)
 	app.DB = db
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", app.Config.Redis.Host, app.Config.Redis.Port),
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	app.Redis = redisClient
 
 	app.Application = gin.New()
 	app.Application.Use(middleware.CORSMiddleware())
@@ -114,4 +130,12 @@ func initJaegerTracerProvider(cfg *config.Configuration) (*trace.TracerProvider,
 		)),
 	)
 	return tp, nil
+}
+
+// initSMTPMailDialer returns an Dialer configured to use
+func initSMTPMailDialer(cfg *config.Configuration) *gomail.Dialer {
+	d := gomail.NewDialer(cfg.Mailer.Host, cfg.Mailer.Port, cfg.Mailer.Username, cfg.Mailer.Password)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	return d
 }

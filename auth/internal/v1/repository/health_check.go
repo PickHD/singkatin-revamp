@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/config"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel"
@@ -23,17 +24,19 @@ type (
 		Logger  *logrus.Logger
 		Tracer  *trace.TracerProvider
 		DB      *mongo.Database
+		Redis   *redis.Client
 	}
 )
 
 // NewHealthCheckRepository return new instances health check repository
-func NewHealthCheckRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, db *mongo.Database) *HealthCheckRepositoryImpl {
+func NewHealthCheckRepository(ctx context.Context, config *config.Configuration, logger *logrus.Logger, tracer *trace.TracerProvider, db *mongo.Database, rds *redis.Client) *HealthCheckRepositoryImpl {
 	return &HealthCheckRepositoryImpl{
 		Context: ctx,
 		Config:  config,
 		Logger:  logger,
 		Tracer:  tracer,
 		DB:      db,
+		Redis:   rds,
 	}
 }
 
@@ -46,5 +49,11 @@ func (hr *HealthCheckRepositoryImpl) Check() (bool, error) {
 		hr.Logger.Error("HealthCheckRepositoryImpl.Check() Ping DB ERROR, ", err)
 		return false, nil
 	}
+
+	if err := hr.Redis.Ping(hr.Context).Err(); err != nil {
+		hr.Logger.Error("HealthCheckRepositoryImpl.Check() Ping Redis ERROR, ", err)
+		return false, nil
+	}
+
 	return true, nil
 }

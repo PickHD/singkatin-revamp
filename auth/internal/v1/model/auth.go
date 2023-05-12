@@ -15,8 +15,9 @@ type (
 
 	// RegisterResponse consist response of success registering as users
 	RegisterResponse struct {
-		ID    string `json:"id"`
-		Email string `json:"email"`
+		ID         string `json:"id"`
+		Email      string `json:"email"`
+		IsVerified bool   `json:"is_verified"`
 	}
 
 	// LoginRequest consist request data for login as users
@@ -30,6 +31,10 @@ type (
 		AccessToken string    `json:"access_token"`
 		Type        string    `json:"type"`
 		ExpireAt    time.Time `json:"expired_at"`
+	}
+
+	VerifyCodeResponse struct {
+		IsVerified bool `json:"is_verified"`
 	}
 )
 
