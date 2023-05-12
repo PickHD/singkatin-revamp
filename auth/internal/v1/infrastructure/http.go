@@ -28,6 +28,8 @@ func setupRouter(app *application.App) {
 
 		v1.POST("/register", dep.AuthController.Register)
 
+		v1.GET("/register/verify", dep.AuthController.VerifyRegister)
+
 		v1.POST("/login", dep.AuthController.Login)
 	}
 

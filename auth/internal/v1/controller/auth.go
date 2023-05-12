@@ -20,6 +20,7 @@ type (
 	AuthController interface {
 		Register(ctx *gin.Context)
 		Login(ctx *gin.Context)
+		VerifyRegister(ctx *gin.Context)
 	}
 
 	// AuthcontrollerImpl is an app auth struct that consists of all the dependencies needed for auth controller
@@ -68,7 +69,7 @@ func (ac *AuthControllerImpl) Register(ctx *gin.Context) {
 	data, err := ac.AuthSvc.RegisterUser(ctx, &req)
 	if err != nil {
 		if strings.Contains(err.Error(), string(model.Validation)) {
-			helper.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), req, err, nil)
+			helper.NewResponses[any](ctx, http.StatusBadRequest, err.Error(), req.Email, err, nil)
 			return
 		}
 
@@ -76,7 +77,7 @@ func (ac *AuthControllerImpl) Register(ctx *gin.Context) {
 		return
 	}
 
-	helper.NewResponses[any](ctx, http.StatusCreated, "Success register user", data, nil, nil)
+	helper.NewResponses[any](ctx, http.StatusCreated, "Success register, please check email for further verification", data, nil, nil)
 }
 
 // Check godoc
@@ -119,4 +120,36 @@ func (ac *AuthControllerImpl) Login(ctx *gin.Context) {
 	}
 
 	helper.NewResponses[any](ctx, http.StatusOK, "Success login user", data, nil, nil)
+}
+
+// Check godoc
+// @Summary      Verify Register Users
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        code  query   string  true  "Code Verification"
+// @Success      200  {object}  helper.BaseResponse
+// @Failure      400  {object}  helper.BaseResponse
+// @Failure      404  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /register/verify [get]
+func (ac *AuthControllerImpl) VerifyRegister(ctx *gin.Context) {
+	tr := otel.GetTracerProvider().Tracer("Auth-VerifyRegister Controller")
+	_, span := tr.Start(ctx, "Start VerifyRegister")
+	defer span.End()
+
+	getCode := ctx.Query("code")
+
+	if getCode == "" {
+		helper.NewResponses[any](ctx, http.StatusBadRequest, "Code Required", nil, nil, nil)
+		return
+	}
+
+	data, err := ac.AuthSvc.VerifyCode(ctx, getCode)
+	if err != nil {
+		helper.NewResponses[any](ctx, http.StatusInternalServerError, "Failed Verify Code", nil, err, nil)
+		return
+	}
+
+	helper.NewResponses[any](ctx, http.StatusOK, "Verify success, please continue to Login Page", data, err, nil)
 }

@@ -14,3 +14,9 @@ func GetEnvInt(e string) int {
 
 	return eInt
 }
+
+func GetEnvBool(e string) bool {
+	eBoolean, _ := strconv.ParseBool(e)
+
+	return eBoolean
+}
