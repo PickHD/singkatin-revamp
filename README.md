@@ -25,6 +25,8 @@ Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin
 4. RabbitMQ
 5. GRPC
 6. Docker
+7. Jaeger
+8. MinIO Storage
 
 ## Setup :
 _(make sure docker & docker-compose installed)_
@@ -48,7 +50,7 @@ _(make sure docker & docker-compose installed)_
    
    
 ## Next Features (In Development) : 
-- Email Verification Register 🕘
+- Email Verification Register
 - Forgot Password 🕘
 - Edit Profile 🕘
 - Upload Avatar Users 🕘
