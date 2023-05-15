@@ -11,7 +11,6 @@ import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/service"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -55,7 +54,7 @@ func NewUserController(ctx context.Context, config *config.Configuration, logger
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /me [get]
 func (uc *UserControllerImpl) Profile(ctx *fiber.Ctx) error {
-	tr := otel.GetTracerProvider().Tracer("User-Profile Controller")
+	tr := uc.Tracer.Tracer("User-Profile Controller")
 	_, span := tr.Start(uc.Context, "Start Profile")
 	defer span.End()
 
@@ -87,7 +86,7 @@ func (uc *UserControllerImpl) Profile(ctx *fiber.Ctx) error {
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /dashboard [get]
 func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
-	tr := otel.GetTracerProvider().Tracer("User-Dashboard Controller")
+	tr := uc.Tracer.Tracer("User-Dashboard Controller")
 	_, span := tr.Start(uc.Context, "Start Dashboard")
 	defer span.End()
 
@@ -117,7 +116,7 @@ func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /short/generate [post]
 func (uc *UserControllerImpl) GenerateShort(ctx *fiber.Ctx) error {
-	tr := otel.GetTracerProvider().Tracer("User-GenerateShort Controller")
+	tr := uc.Tracer.Tracer("User-GenerateShort Controller")
 	_, span := tr.Start(uc.Context, "Start GenerateShort")
 	defer span.End()
 

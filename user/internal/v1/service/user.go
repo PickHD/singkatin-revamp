@@ -9,7 +9,6 @@ import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/repository"
 	shortenerpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -45,7 +44,7 @@ func NewUserService(ctx context.Context, config *config.Configuration, logger *l
 }
 
 func (us *UserServiceImpl) GetUserDetail(email string) (*model.User, error) {
-	tr := otel.GetTracerProvider().Tracer("User-GetUserDetail Service")
+	tr := us.Tracer.Tracer("User-GetUserDetail Service")
 	_, span := tr.Start(us.Context, "Start GetUserDetail")
 	defer span.End()
 
@@ -53,7 +52,7 @@ func (us *UserServiceImpl) GetUserDetail(email string) (*model.User, error) {
 }
 
 func (us *UserServiceImpl) GetUserShorts(userID string) ([]model.UserShorts, error) {
-	tr := otel.GetTracerProvider().Tracer("User-GetUserShorts Service")
+	tr := us.Tracer.Tracer("User-GetUserShorts Service")
 	_, span := tr.Start(us.Context, "Start GetUserShorts")
 	defer span.End()
 
@@ -83,7 +82,7 @@ func (us *UserServiceImpl) GetUserShorts(userID string) ([]model.UserShorts, err
 }
 
 func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error) {
-	tr := otel.GetTracerProvider().Tracer("User-GenerateUserShorts Service")
+	tr := us.Tracer.Tracer("User-GenerateUserShorts Service")
 	_, span := tr.Start(us.Context, "Start GenerateUserShorts")
 	defer span.End()
 

@@ -7,7 +7,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -41,7 +40,7 @@ func NewHealthCheckRepository(ctx context.Context, config *config.Configuration,
 }
 
 func (hr *HealthCheckRepositoryImpl) Check() (bool, error) {
-	tr := otel.GetTracerProvider().Tracer("Shortener-Check Repository")
+	tr := hr.Tracer.Tracer("Shortener-Check Repository")
 	_, span := tr.Start(hr.Context, "Start Check")
 	defer span.End()
 

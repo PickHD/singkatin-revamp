@@ -12,7 +12,6 @@ import (
 	shortenerpb "github.com/PickHD/singkatin-revamp/shortener/pkg/api/v1/proto/shortener"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,7 +54,7 @@ func NewShortController(ctx context.Context, config *config.Configuration, logge
 }
 
 func (sc *ShortControllerImpl) GetListShortenerByUserID(ctx context.Context, req *shortenerpb.ListShortenerRequest) (*shortenerpb.ListShortenerResponse, error) {
-	tr := otel.GetTracerProvider().Tracer("Shortener-GetListShortenerByUserID Controller")
+	tr := sc.Tracer.Tracer("Shortener-GetListShortenerByUserID Controller")
 	_, span := tr.Start(ctx, "Start GetListShortenerByUserID")
 	defer span.End()
 
@@ -96,7 +95,7 @@ func (sc *ShortControllerImpl) GetListShortenerByUserID(ctx context.Context, req
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /{short_url} [get]
 func (sc *ShortControllerImpl) ClickShortener(ctx echo.Context) error {
-	tr := otel.GetTracerProvider().Tracer("Shortener-ClickShortener Controller")
+	tr := sc.Tracer.Tracer("Shortener-ClickShortener Controller")
 	_, span := tr.Start(sc.Context, "Start ClickShortener")
 	defer span.End()
 
@@ -117,7 +116,7 @@ func (sc *ShortControllerImpl) ClickShortener(ctx echo.Context) error {
 }
 
 func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, msg *shortenerpb.CreateShortenerMessage) error {
-	tr := otel.GetTracerProvider().Tracer("Shortener-ProcessCreateShortUser Controller")
+	tr := sc.Tracer.Tracer("Shortener-ProcessCreateShortUser Controller")
 	_, span := tr.Start(sc.Context, "Start ProcessCreateShortUser")
 	defer span.End()
 
@@ -136,7 +135,7 @@ func (sc *ShortControllerImpl) ProcessCreateShortUser(ctx context.Context, msg *
 }
 
 func (sc *ShortControllerImpl) ProcessUpdateVisitorCount(ctx context.Context, msg *shortenerpb.UpdateVisitorCountMessage) error {
-	tr := otel.GetTracerProvider().Tracer("Shortener-ProcessUpdateVisitorCount Controller")
+	tr := sc.Tracer.Tracer("Shortener-ProcessUpdateVisitorCount Controller")
 	_, span := tr.Start(sc.Context, "Start ProcessUpdateVisitorCount")
 	defer span.End()
 
