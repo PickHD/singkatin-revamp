@@ -18,6 +18,7 @@ type (
 		GetUserDetail(email string) (*model.User, error)
 		GetUserShorts(userID string) ([]model.UserShorts, error)
 		GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error)
+		UpdateUserProfile(userID string, req *model.EditProfileRequest) error
 	}
 
 	// UserServiceImpl is an app user struct that consists of all the dependencies needed for user service
@@ -100,4 +101,25 @@ func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.Generate
 	return &model.GenerateShortUserResponse{
 		ShortURL: msg.ShortURL,
 	}, nil
+}
+
+func (us *UserServiceImpl) UpdateUserProfile(userID string, req *model.EditProfileRequest) error {
+	tr := us.Tracer.Tracer("User-UpdateUserProfile Service")
+	_, span := tr.Start(us.Context, "Start UpdateUserProfile")
+	defer span.End()
+
+	if req.FullName == "" {
+		return model.NewError(model.Validation, "Full Name Required")
+	}
+
+	if len(req.FullName) < 3 {
+		return model.NewError(model.Validation, "Full Name must more than 3")
+	}
+
+	err := us.UserRepo.UpdateProfileByID(us.Context, userID, req)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

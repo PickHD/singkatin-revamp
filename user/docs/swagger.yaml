@@ -18,6 +18,11 @@ definitions:
       total_page:
         type: integer
     type: object
+  model.EditProfileRequest:
+    properties:
+      full_name:
+        type: string
+    type: object
   model.GenerateShortUserRequest:
     properties:
       full_url:
@@ -102,6 +107,40 @@ paths:
           schema:
             $ref: '#/definitions/helper.BaseResponse'
       summary: Get Profiles
+      tags:
+      - User
+  /me/edit:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Authorization Bearer <Place Access Token Here>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: generate short user
+        in: body
+        name: profile
+        required: true
+        schema:
+          $ref: '#/definitions/model.EditProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Update Users Profile
       tags:
       - User
   /short/generate:
