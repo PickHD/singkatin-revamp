@@ -36,6 +36,23 @@ type (
 	VerifyCodeResponse struct {
 		IsVerified bool `json:"is_verified"`
 	}
+
+	// ForgotPasswordRequest consist request of forgot password users
+	ForgotPasswordRequest struct {
+		Email string `json:"email"`
+	}
+
+	// VerificationType consist type of verification
+	VerificationType string
+
+	ResetPasswordRequest struct {
+		NewPassword string `json:"new_password"`
+	}
+)
+
+const (
+	RegisterVerification       VerificationType = "register_verification"
+	ForgotPasswordVerification VerificationType = "forgot_password_verification"
 )
 
 var (

@@ -31,6 +31,12 @@ func setupRouter(app *application.App) {
 		v1.GET("/register/verify", dep.AuthController.VerifyRegister)
 
 		v1.POST("/login", dep.AuthController.Login)
+
+		v1.POST("/forgot-password", dep.AuthController.ForgotPassword)
+
+		v1.GET("/forgot-password/verify", dep.AuthController.VerifyForgotPassword)
+
+		v1.PUT("/reset-password", dep.AuthController.ResetPassword)
 	}
 
 }

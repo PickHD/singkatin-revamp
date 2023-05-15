@@ -12,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -21,9 +20,10 @@ type (
 	AuthRepository interface {
 		CreateUser(ctx context.Context, req *model.User) (*model.User, error)
 		FindByEmail(ctx context.Context, email string) (*model.User, error)
-		SetRegisterVerificationByEmail(ctx context.Context, email string, code string, duration time.Duration) error
-		GetRegisterVerificationByCode(ctx context.Context, code string) (string, error)
+		SetVerificationByEmail(ctx context.Context, email string, code string, duration time.Duration, verificationType model.VerificationType) error
+		GetVerificationByCode(ctx context.Context, code string, verificationType model.VerificationType) (string, error)
 		UpdateVerifyStatusByEmail(ctx context.Context, email string) error
+		UpdatePasswordByEmail(ctx context.Context, email string, newPassword string) error
 	}
 
 	// AuthRepositoryImpl is an app auth struct that consists of all the dependencies needed for auth repository
@@ -50,8 +50,8 @@ func NewAuthRepository(ctx context.Context, config *config.Configuration, logger
 }
 
 func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (*model.User, error) {
-	tr := otel.GetTracerProvider().Tracer("Auth-CreateUser repository")
-	_, span := tr.Start(ctx, "Start CreateUser")
+	tr := ar.Tracer.Tracer("Auth-CreateUser repository")
+	ctx, span := tr.Start(ctx, "Start CreateUser")
 	defer span.End()
 
 	// check data users by email is already exists or not
@@ -89,8 +89,8 @@ func (ar *AuthRepositoryImpl) CreateUser(ctx context.Context, req *model.User) (
 }
 
 func (ar *AuthRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
-	tr := otel.GetTracerProvider().Tracer("Auth-FindByEmail repository")
-	_, span := tr.Start(ctx, "Start FindByEmail")
+	tr := ar.Tracer.Tracer("Auth-FindByEmail repository")
+	ctx, span := tr.Start(ctx, "Start FindByEmail")
 	defer span.End()
 
 	user := model.User{}
@@ -108,14 +108,14 @@ func (ar *AuthRepositoryImpl) FindByEmail(ctx context.Context, email string) (*m
 	return &user, nil
 }
 
-func (ar *AuthRepositoryImpl) SetRegisterVerificationByEmail(ctx context.Context, email string, code string, duration time.Duration) error {
-	tr := otel.GetTracerProvider().Tracer("Auth-SetRegisterVerificationByEmail repository")
-	_, span := tr.Start(ctx, "Start SetRegisterVerificationByEmail")
+func (ar *AuthRepositoryImpl) SetVerificationByEmail(ctx context.Context, email string, code string, duration time.Duration, verificationType model.VerificationType) error {
+	tr := ar.Tracer.Tracer("Auth-SetVerificationByEmail repository")
+	ctx, span := tr.Start(ctx, "Start SetVerificationByEmail")
 	defer span.End()
 
-	err := ar.Redis.SetEx(ctx, fmt.Sprintf(model.RegisterVerificationkey, code), email, duration).Err()
+	err := ar.Redis.SetEx(ctx, fmt.Sprintf(model.VerificationKey, verificationType, code), email, duration).Err()
 	if err != nil {
-		ar.Logger.Error("AuthRepositoryImpl.SetRegisterVerificationByEmail SetEx ERROR, ", err)
+		ar.Logger.Error("AuthRepositoryImpl.SetVerificationByEmail SetEx ERROR, ", err)
 
 		return err
 	}
@@ -123,14 +123,14 @@ func (ar *AuthRepositoryImpl) SetRegisterVerificationByEmail(ctx context.Context
 	return nil
 }
 
-func (ar *AuthRepositoryImpl) GetRegisterVerificationByCode(ctx context.Context, code string) (string, error) {
-	tr := otel.GetTracerProvider().Tracer("Auth-GetRegisterVerificationByCode repository")
-	_, span := tr.Start(ctx, "Start GetRegisterVerificationByCode")
+func (ar *AuthRepositoryImpl) GetVerificationByCode(ctx context.Context, code string, verificationType model.VerificationType) (string, error) {
+	tr := ar.Tracer.Tracer("Auth-GetVerificationByCode repository")
+	ctx, span := tr.Start(ctx, "Start GetVerificationByCode")
 	defer span.End()
 
-	result := ar.Redis.Get(ctx, fmt.Sprintf(model.RegisterVerificationkey, code))
+	result := ar.Redis.Get(ctx, fmt.Sprintf(model.VerificationKey, verificationType, code))
 	if result.Err() != nil {
-		ar.Logger.Error("AuthRepositoryImpl.SetRegisterVerificationByEmail Get ERROR, ", result.Err())
+		ar.Logger.Error("AuthRepositoryImpl.GetVerificationByCode Get ERROR, ", result.Err())
 
 		return "", result.Err()
 	}
@@ -139,8 +139,8 @@ func (ar *AuthRepositoryImpl) GetRegisterVerificationByCode(ctx context.Context,
 }
 
 func (ar *AuthRepositoryImpl) UpdateVerifyStatusByEmail(ctx context.Context, email string) error {
-	tr := otel.GetTracerProvider().Tracer("Auth-UpdateVerifyStatusByEmail repository")
-	_, span := tr.Start(ctx, "Start UpdateVerifyStatusByEmail")
+	tr := ar.Tracer.Tracer("Auth-UpdateVerifyStatusByEmail repository")
+	ctx, span := tr.Start(ctx, "Start UpdateVerifyStatusByEmail")
 	defer span.End()
 
 	_, err := ar.DB.Collection(ar.Config.Database.UsersCollection).UpdateOne(ctx,
@@ -149,6 +149,23 @@ func (ar *AuthRepositoryImpl) UpdateVerifyStatusByEmail(ctx context.Context, ema
 		})
 	if err != nil {
 		ar.Logger.Error("AuthRepositoryImpl.UpdateVerifyStatusByEmail UpdateOne ERROR, ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (ar *AuthRepositoryImpl) UpdatePasswordByEmail(ctx context.Context, email string, newPassword string) error {
+	tr := ar.Tracer.Tracer("Auth-UpdatePasswordByEmail repository")
+	ctx, span := tr.Start(ctx, "Start UpdatePasswordByEmail")
+	defer span.End()
+
+	_, err := ar.DB.Collection(ar.Config.Database.UsersCollection).UpdateOne(ctx,
+		bson.D{{Key: "email", Value: email}}, bson.M{
+			"$set": bson.D{{Key: "password", Value: newPassword}},
+		})
+	if err != nil {
+		ar.Logger.Error("AuthRepositoryImpl.UpdatePasswordByEmail UpdateOne ERROR, ", err)
 		return err
 	}
 

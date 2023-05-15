@@ -1,5 +1,5 @@
 package model
 
 const (
-	RegisterVerificationkey = "register_verification:%s"
+	VerificationKey = "%s:%s"
 )
