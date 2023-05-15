@@ -52,6 +52,6 @@ _(make sure docker & docker-compose installed)_
 ## Next Features (In Development) : 
 - Email Verification Register ✔️
 - Forgot Password ✔️
-- Edit Profile 🕘
+- Edit Profile ✔️
 - Upload Avatar Users 🕘
 - User Shorteners Advance Management 🕘
