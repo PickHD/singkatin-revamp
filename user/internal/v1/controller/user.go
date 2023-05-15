@@ -20,6 +20,7 @@ type (
 		Profile(ctx *fiber.Ctx) error
 		Dashboard(ctx *fiber.Ctx) error
 		GenerateShort(ctx *fiber.Ctx) error
+		EditProfile(ctx *fiber.Ctx) error
 	}
 
 	// UserControllerImpl is an app user struct that consists of all the dependencies needed for user controller
@@ -138,4 +139,44 @@ func (uc *UserControllerImpl) GenerateShort(ctx *fiber.Ctx) error {
 	}
 
 	return helper.NewResponses[any](ctx, fiber.StatusCreated, "Success generate Short URL's", newShort, nil, nil)
+}
+
+// Check godoc
+// @Summary      Update Users Profile
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
+// @Param        profile body model.EditProfileRequest true "generate short user"
+// @Success      200  {object}  helper.BaseResponse
+// @Failure      400  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /me/edit [put]
+func (uc *UserControllerImpl) EditProfile(ctx *fiber.Ctx) error {
+	tr := uc.Tracer.Tracer("User-EditProfile Controller")
+	_, span := tr.Start(uc.Context, "Start EditProfile")
+	defer span.End()
+
+	var req model.EditProfileRequest
+
+	data := ctx.Locals(model.KeyJWTValidAccess)
+	extData, err := middleware.Extract(data)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusBadRequest, err.Error(), nil, err, nil)
+	}
+
+	err = uc.UserSvc.UpdateUserProfile(extData.UserID, &req)
+	if err != nil {
+		if strings.Contains(err.Error(), string(model.Validation)) {
+			return helper.NewResponses[any](ctx, fiber.StatusBadRequest, err.Error(), nil, err, nil)
+		}
+
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success update profile", nil, nil, nil)
 }

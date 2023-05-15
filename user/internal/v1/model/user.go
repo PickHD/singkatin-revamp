@@ -34,4 +34,8 @@ type (
 		ShortURL string `json:"short_url"`
 		UserID   string `json:"user_id"`
 	}
+
+	EditProfileRequest struct {
+		FullName string `json:"full_name"`
+	}
 )

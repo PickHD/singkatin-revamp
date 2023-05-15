@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/protobuf/proto"
@@ -19,6 +20,7 @@ type (
 	UserRepository interface {
 		FindByEmail(ctx context.Context, email string) (*model.User, error)
 		PublishCreateUserShortener(ctx context.Context, req *model.GenerateShortUserMessage) error
+		UpdateProfileByID(ctx context.Context, userID string, req *model.EditProfileRequest) error
 	}
 
 	// UserRepositoryImpl is an app user struct that consists of all the dependencies needed for user repository
@@ -98,6 +100,29 @@ func (ur *UserRepositoryImpl) PublishCreateUserShortener(ctx context.Context, re
 	}
 
 	ur.Logger.Info("Success Publish User Shortener to Queue: ", ur.Config.RabbitMQ.QueueCreateShortener)
+
+	return nil
+}
+
+func (ur *UserRepositoryImpl) UpdateProfileByID(ctx context.Context, userID string, req *model.EditProfileRequest) error {
+	tr := ur.Tracer.Tracer("User-UpdateProfileByID Repository")
+	_, span := tr.Start(ctx, "Start UpdateProfileByID")
+	defer span.End()
+
+	objUserID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.UpdateProfileByID primitive.ObjectIDFromHex ERROR, ", err)
+		return err
+	}
+
+	_, err = ur.DB.Collection(ur.Config.Database.UsersCollection).UpdateOne(ctx,
+		bson.D{{Key: "_id", Value: objUserID}}, bson.M{
+			"$set": bson.D{{Key: "fullname", Value: req.FullName}},
+		})
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.UpdateProfileByID UpdateOne ERROR, ", err)
+		return err
+	}
 
 	return nil
 }
