@@ -8,7 +8,6 @@ import (
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/helper"
 	"github.com/PickHD/singkatin-revamp/auth/internal/v1/service"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -46,7 +45,7 @@ func NewHealthCheckController(ctx context.Context, config *config.Configuration,
 // @Failure      500  {object}  helper.BaseResponse
 // @Router       /health-check [get]
 func (hc *HealthCheckControllerImpl) Check(ctx *gin.Context) {
-	tr := otel.GetTracerProvider().Tracer("Auth-Check Controller")
+	tr := hc.Tracer.Tracer("Auth-Check Controller")
 	_, span := tr.Start(ctx, "Start Check")
 	defer span.End()
 
