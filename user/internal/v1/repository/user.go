@@ -10,7 +10,6 @@ import (
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/protobuf/proto"
 )
@@ -46,7 +45,7 @@ func NewUserRepository(ctx context.Context, config *config.Configuration, logger
 }
 
 func (ur *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
-	tr := otel.GetTracerProvider().Tracer("User-FindByEmail Repository")
+	tr := ur.Tracer.Tracer("User-FindByEmail Repository")
 	_, span := tr.Start(ctx, "Start FindByEmail")
 	defer span.End()
 
@@ -66,7 +65,7 @@ func (ur *UserRepositoryImpl) FindByEmail(ctx context.Context, email string) (*m
 }
 
 func (ur *UserRepositoryImpl) PublishCreateUserShortener(ctx context.Context, req *model.GenerateShortUserMessage) error {
-	tr := otel.GetTracerProvider().Tracer("User-PublishCreateUserShortener Repository")
+	tr := ur.Tracer.Tracer("User-PublishCreateUserShortener Repository")
 	_, span := tr.Start(ctx, "Start PublishCreateUserShortener")
 	defer span.End()
 

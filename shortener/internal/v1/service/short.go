@@ -10,7 +10,6 @@ import (
 	"github.com/PickHD/singkatin-revamp/shortener/internal/v1/repository"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -45,7 +44,7 @@ func NewShortService(ctx context.Context, config *config.Configuration, logger *
 }
 
 func (ss *ShortServiceImpl) GetListShortenerByUserID(ctx context.Context, userID string) ([]model.Short, error) {
-	tr := otel.GetTracerProvider().Tracer("Shortener-GetListShortenerByUserID Service")
+	tr := ss.Tracer.Tracer("Shortener-GetListShortenerByUserID Service")
 	ctx, span := tr.Start(ctx, "Start GetListShortenerByUserID")
 	defer span.End()
 
@@ -58,7 +57,7 @@ func (ss *ShortServiceImpl) GetListShortenerByUserID(ctx context.Context, userID
 }
 
 func (ss *ShortServiceImpl) CreateShort(ctx context.Context, req *model.CreateShortRequest) error {
-	tr := otel.GetTracerProvider().Tracer("Shortener-CreateShort Service")
+	tr := ss.Tracer.Tracer("Shortener-CreateShort Service")
 	ctx, span := tr.Start(ctx, "Start CreateShort")
 	defer span.End()
 
@@ -79,7 +78,7 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 		redisTTLDuration = time.Minute * time.Duration(ss.Config.Redis.TTL)
 	)
 
-	tr := otel.GetTracerProvider().Tracer("Shortener-ClickShort Service")
+	tr := ss.Tracer.Tracer("Shortener-ClickShort Service")
 	ctx, span := tr.Start(ss.Context, "Start ClickShort")
 	defer span.End()
 
@@ -127,7 +126,7 @@ func (ss *ShortServiceImpl) ClickShort(shortURL string) (*model.ClickShortRespon
 }
 
 func (ss *ShortServiceImpl) UpdateVisitorShort(ctx context.Context, req *model.UpdateVisitorRequest) error {
-	tr := otel.GetTracerProvider().Tracer("Shortener-UpdateVisitorShort Service")
+	tr := ss.Tracer.Tracer("Shortener-UpdateVisitorShort Service")
 	ctx, span := tr.Start(ctx, "Start UpdateVisitorShort")
 	defer span.End()
 

@@ -18,6 +18,11 @@ definitions:
       total_page:
         type: integer
     type: object
+  model.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    type: object
   model.LoginRequest:
     properties:
       email:
@@ -34,6 +39,11 @@ definitions:
       password:
         type: string
     type: object
+  model.ResetPasswordRequest:
+    properties:
+      new_password:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -45,6 +55,67 @@ info:
   title: Singkatin Revamp API
   version: "1.0"
 paths:
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: forgot password user
+        in: body
+        name: forgotPassword
+        required: true
+        schema:
+          $ref: '#/definitions/model.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Forgot Password Users
+      tags:
+      - Auth
+  /forgot-password/verify:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Code Verification
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Verify Forgot Password Users
+      tags:
+      - Auth
   /health-check:
     get:
       consumes:
@@ -155,6 +226,44 @@ paths:
           schema:
             $ref: '#/definitions/helper.BaseResponse'
       summary: Verify Register Users
+      tags:
+      - Auth
+  /reset-password:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Code Verification
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: reset password user
+        in: body
+        name: forgotPassword
+        required: true
+        schema:
+          $ref: '#/definitions/model.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Reset Password Users
       tags:
       - Auth
 schemes:

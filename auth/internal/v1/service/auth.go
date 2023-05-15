@@ -12,7 +12,6 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"gopkg.in/gomail.v2"
 )
@@ -22,7 +21,9 @@ type (
 	AuthService interface {
 		RegisterUser(ctx context.Context, req *model.RegisterRequest) (*model.RegisterResponse, error)
 		LoginUser(ctx context.Context, req *model.LoginRequest) (*model.LoginResponse, error)
-		VerifyCode(ctx context.Context, code string) (*model.VerifyCodeResponse, error)
+		VerifyCode(ctx context.Context, code string, verificationType model.VerificationType) (*model.VerifyCodeResponse, error)
+		ForgotPasswordUser(ctx context.Context, req *model.ForgotPasswordRequest) error
+		ResetPasswordUser(ctx context.Context, req *model.ResetPasswordRequest, code string) error
 	}
 
 	// AuthServiceImpl is an app auth struct that consists of all the dependencies needed for auth service
@@ -49,8 +50,8 @@ func NewAuthService(ctx context.Context, config *config.Configuration, logger *l
 }
 
 func (as *AuthServiceImpl) RegisterUser(ctx context.Context, req *model.RegisterRequest) (*model.RegisterResponse, error) {
-	tr := otel.GetTracerProvider().Tracer("Auth-RegisterUser service")
-	_, span := tr.Start(ctx, "Start RegisterUser")
+	tr := as.Tracer.Tracer("Auth-RegisterUser service")
+	ctx, span := tr.Start(ctx, "Start RegisterUser")
 	defer span.End()
 
 	err := validateRegisterUser(req)
@@ -76,14 +77,14 @@ func (as *AuthServiceImpl) RegisterUser(ctx context.Context, req *model.Register
 	codeVerification := helper.RandomStringBytesMaskImprSrcSB(9)
 	expiredCodeDuration := time.Minute * time.Duration(as.Config.Redis.TTL)
 
-	err = as.AuthRepo.SetRegisterVerificationByEmail(ctx, req.Email, codeVerification, expiredCodeDuration)
+	err = as.AuthRepo.SetVerificationByEmail(ctx, req.Email, codeVerification, expiredCodeDuration, model.RegisterVerification)
 	if err != nil {
 		return nil, err
 	}
 
-	emailLink := fmt.Sprintf("<a href='%s'>%s</a>", "http://localhost:8080/v1/register/verify?code="+codeVerification, "Verification Link")
+	emailLink := fmt.Sprintf("<h1><a href='%s'>%s</a><h1>", "http://localhost:8080/v1/register/verify?code="+codeVerification, "Verification Link")
 
-	err = as.sendMail(as.Config.Mailer.Sender, []string{req.Email}, req.Email, "Registration Verification", "Please Complete the Verification", emailLink)
+	err = as.sendMail(as.Config.Mailer.Sender, []string{req.Email}, req.Email, "Registration Confirmations", "Please Complete the Verification of your Request Registration", emailLink)
 	if err != nil {
 		as.Logger.Error(err)
 		return nil, err
@@ -97,8 +98,8 @@ func (as *AuthServiceImpl) RegisterUser(ctx context.Context, req *model.Register
 }
 
 func (as *AuthServiceImpl) LoginUser(ctx context.Context, req *model.LoginRequest) (*model.LoginResponse, error) {
-	tr := otel.GetTracerProvider().Tracer("Auth-LoginUser service")
-	_, span := tr.Start(ctx, "Start LoginUser")
+	tr := as.Tracer.Tracer("Auth-LoginUser service")
+	ctx, span := tr.Start(ctx, "Start LoginUser")
 	defer span.End()
 
 	err := validateLoginUser(req)
@@ -129,12 +130,12 @@ func (as *AuthServiceImpl) LoginUser(ctx context.Context, req *model.LoginReques
 	}, nil
 }
 
-func (as *AuthServiceImpl) VerifyCode(ctx context.Context, code string) (*model.VerifyCodeResponse, error) {
-	tr := otel.GetTracerProvider().Tracer("Auth-VerifyCode service")
+func (as *AuthServiceImpl) VerifyCode(ctx context.Context, code string, verificationType model.VerificationType) (*model.VerifyCodeResponse, error) {
+	tr := as.Tracer.Tracer("Auth-VerifyCode service")
 	ctx, span := tr.Start(ctx, "Start VerifyCode")
 	defer span.End()
 
-	getEmail, err := as.AuthRepo.GetRegisterVerificationByCode(ctx, code)
+	getEmail, err := as.AuthRepo.GetVerificationByCode(ctx, code, verificationType)
 	if err != nil {
 		if err == redis.Nil {
 			return nil, model.NewError(model.NotFound, "code not found / expired")
@@ -143,14 +144,87 @@ func (as *AuthServiceImpl) VerifyCode(ctx context.Context, code string) (*model.
 		return nil, err
 	}
 
-	err = as.AuthRepo.UpdateVerifyStatusByEmail(ctx, getEmail)
-	if err != nil {
-		return nil, err
+	switch verificationType {
+	case model.RegisterVerification:
+		err = as.AuthRepo.UpdateVerifyStatusByEmail(ctx, getEmail)
+		if err != nil {
+			return nil, err
+		}
+	case model.ForgotPasswordVerification:
 	}
 
 	return &model.VerifyCodeResponse{
 		IsVerified: true,
 	}, nil
+}
+
+func (as *AuthServiceImpl) ForgotPasswordUser(ctx context.Context, req *model.ForgotPasswordRequest) error {
+	tr := as.Tracer.Tracer("Auth-ForgotPasswordUser service")
+	ctx, span := tr.Start(ctx, "Start ForgotPasswordUser")
+	defer span.End()
+
+	if !model.IsValidEmail.MatchString(req.Email) {
+		return model.NewError(model.Validation, "invalid email")
+	}
+
+	_, err := as.AuthRepo.FindByEmail(ctx, req.Email)
+	if err != nil {
+		return err
+	}
+
+	codeVerification := helper.RandomStringBytesMaskImprSrcSB(10)
+	expiredCodeDuration := time.Minute * time.Duration(as.Config.Redis.TTL)
+
+	err = as.AuthRepo.SetVerificationByEmail(ctx, req.Email, codeVerification, expiredCodeDuration, model.ForgotPasswordVerification)
+	if err != nil {
+		return err
+	}
+
+	emailLink := fmt.Sprintf("<h1><a href='%s'>%s</a><h1>", "http://localhost:8080/v1/forgot-password/verify?code="+codeVerification, "Verification Link")
+
+	err = as.sendMail(as.Config.Mailer.Sender, []string{req.Email}, req.Email, "Forgot Password Confirmations", "Please Complete the Verification of your Request Forgot Password", emailLink)
+	if err != nil {
+		as.Logger.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (as *AuthServiceImpl) ResetPasswordUser(ctx context.Context, req *model.ResetPasswordRequest, code string) error {
+	tr := as.Tracer.Tracer("Auth-ResetPasswordUser service")
+	ctx, span := tr.Start(ctx, "Start ResetPasswordUser")
+	defer span.End()
+
+	if req.NewPassword == "" {
+		return model.NewError(model.Validation, "password required")
+	}
+
+	ok := helper.IsValid(req.NewPassword)
+	if !ok {
+		return model.NewError(model.Validation, "password must min length 7, and at least has 1 each upper,lower,number,special")
+	}
+
+	getEmail, err := as.AuthRepo.GetVerificationByCode(ctx, code, model.ForgotPasswordVerification)
+	if err != nil {
+		if err == redis.Nil {
+			return model.NewError(model.NotFound, "code not found / expired")
+		}
+
+		return err
+	}
+
+	hashedNewPassword, err := helper.HashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	err = as.AuthRepo.UpdatePasswordByEmail(ctx, getEmail, hashedNewPassword)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func validateRegisterUser(req *model.RegisterRequest) error {
@@ -160,6 +234,15 @@ func validateRegisterUser(req *model.RegisterRequest) error {
 
 	if req.FullName == "" {
 		return model.NewError(model.Validation, "full name required")
+	}
+
+	if req.Password == "" {
+		return model.NewError(model.Validation, "password required")
+	}
+
+	ok := helper.IsValid(req.Password)
+	if !ok {
+		return model.NewError(model.Validation, "password must min length 7, and at least has 1 each upper,lower,number,special")
 	}
 
 	if !model.IsValidEmail.MatchString(req.Email) {

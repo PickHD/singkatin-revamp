@@ -6,7 +6,6 @@ import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/config"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -38,7 +37,7 @@ func NewHealthCheckRepository(ctx context.Context, config *config.Configuration,
 }
 
 func (hr *HealthCheckRepositoryImpl) Check() (bool, error) {
-	tr := otel.GetTracerProvider().Tracer("User-Check Repository")
+	tr := hr.Tracer.Tracer("User-Check Repository")
 	_, span := tr.Start(hr.Context, "Start Check")
 	defer span.End()
 
