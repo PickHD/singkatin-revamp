@@ -28,8 +28,11 @@ Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin
 7. Jaeger
 8. MinIO Storage
 
+## Prerequisites : 
+1. Make sure Docker & Docker Compose already installed on your machine
+2. Rename `example.env` to `.env` on folder `./cmd/v1` every services
+
 ## Setup :
-_(make sure docker & docker-compose installed)_
 1. To build all services, run command : 
     ```
     $ make build
