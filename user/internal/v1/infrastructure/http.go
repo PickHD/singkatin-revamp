@@ -34,6 +34,8 @@ func setupRouter(app *application.App) {
 		v1.Get("/dashboard", middleware.ValidateJWTMiddleware, dep.UserController.Dashboard)
 
 		v1.Post("/short/generate", middleware.ValidateJWTMiddleware, dep.UserController.GenerateShort)
+
+		v1.Post("/upload/avatar", middleware.ValidateJWTMiddleware, dep.UserController.UploadAvatar)
 	}
 
 	// handler for route not found

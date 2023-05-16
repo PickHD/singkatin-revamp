@@ -1,13 +1,18 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net/url"
 
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/helper"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/model"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/repository"
 	shortenerpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener"
+	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/sdk/trace"
 )
@@ -19,6 +24,7 @@ type (
 		GetUserShorts(userID string) ([]model.UserShorts, error)
 		GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error)
 		UpdateUserProfile(userID string, req *model.EditProfileRequest) error
+		UploadUserAvatar(ctx *fiber.Ctx, userID string) (*model.UploadAvatarResponse, error)
 	}
 
 	// UserServiceImpl is an app user struct that consists of all the dependencies needed for user service
@@ -122,4 +128,62 @@ func (us *UserServiceImpl) UpdateUserProfile(userID string, req *model.EditProfi
 	}
 
 	return nil
+}
+
+func (us *UserServiceImpl) UploadUserAvatar(ctx *fiber.Ctx, userID string) (*model.UploadAvatarResponse, error) {
+	tr := us.Tracer.Tracer("User-UploadUserAvatar Service")
+	_, span := tr.Start(us.Context, "Start UploadUserAvatar")
+	defer span.End()
+
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return nil, err
+	}
+
+	buffer, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer buffer.Close()
+
+	contentType := file.Header["Content-Type"][0]
+	fileName := fmt.Sprintf("%s-%s", file.Filename, userID)
+
+	// detect content type & validate only allow images
+	switch contentType {
+	case "image/jpeg", "image/png":
+	default:
+		return nil, model.NewError(model.Validation, "invalid file, only accept file with extension image/jpeg or image/png")
+	}
+
+	// copy to new buffer
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, buffer); err != nil {
+		return nil, err
+	}
+
+	// publish to queue async
+	err = us.UserRepo.PublishUploadAvatarUser(us.Context, &model.UploadAvatarRequest{
+		FileName:    fileName,
+		ContentType: contentType,
+		Avatars:     buf.Bytes(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	fileUrl := url.URL{
+		Scheme: "http",
+		Path:   fmt.Sprintf("%s/%s/%s", us.Config.MinIO.Endpoint, us.Config.MinIO.Bucket, fileName),
+	}
+
+	// update avatar_url users to db
+	err = us.UserRepo.UpdateAvatarUserByID(us.Context, fileUrl.String(), userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.UploadAvatarResponse{
+		FileURL: fileUrl.String(),
+	}, nil
 }

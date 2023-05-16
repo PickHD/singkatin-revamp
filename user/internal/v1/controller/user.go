@@ -21,6 +21,7 @@ type (
 		Dashboard(ctx *fiber.Ctx) error
 		GenerateShort(ctx *fiber.Ctx) error
 		EditProfile(ctx *fiber.Ctx) error
+		UploadAvatar(ctx *fiber.Ctx) error
 	}
 
 	// UserControllerImpl is an app user struct that consists of all the dependencies needed for user controller
@@ -179,4 +180,34 @@ func (uc *UserControllerImpl) EditProfile(ctx *fiber.Ctx) error {
 	}
 
 	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success update profile", nil, nil, nil)
+}
+
+// Check godoc
+// @Summary      Upload Users Avatar
+// @Tags         User
+// @Accept       mpfd
+// @Produce      json
+// @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
+// @Param        file formData file true "file avatar"
+// @Success      200  {object}  helper.BaseResponse
+// @Failure      400  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /upload/avatar [post]
+func (uc *UserControllerImpl) UploadAvatar(ctx *fiber.Ctx) error {
+	tr := uc.Tracer.Tracer("User-UploadAvatar Controller")
+	_, span := tr.Start(uc.Context, "Start UploadAvatar")
+	defer span.End()
+
+	data := ctx.Locals(model.KeyJWTValidAccess)
+	extData, err := middleware.Extract(data)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	resp, err := uc.UserSvc.UploadUserAvatar(ctx, extData.UserID)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success upload avatar users", resp, nil, nil)
 }

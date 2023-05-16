@@ -6,6 +6,7 @@ import (
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/config"
 	"github.com/PickHD/singkatin-revamp/user/internal/v1/model"
 	shortenerpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/shortener"
+	uploadpb "github.com/PickHD/singkatin-revamp/user/pkg/api/v1/proto/upload"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,6 +22,8 @@ type (
 		FindByEmail(ctx context.Context, email string) (*model.User, error)
 		PublishCreateUserShortener(ctx context.Context, req *model.GenerateShortUserMessage) error
 		UpdateProfileByID(ctx context.Context, userID string, req *model.EditProfileRequest) error
+		PublishUploadAvatarUser(ctx context.Context, req *model.UploadAvatarRequest) error
+		UpdateAvatarUserByID(ctx context.Context, fileURL string, userID string) error
 	}
 
 	// UserRepositoryImpl is an app user struct that consists of all the dependencies needed for user repository
@@ -127,10 +130,79 @@ func (ur *UserRepositoryImpl) UpdateProfileByID(ctx context.Context, userID stri
 	return nil
 }
 
+func (ur *UserRepositoryImpl) PublishUploadAvatarUser(ctx context.Context, req *model.UploadAvatarRequest) error {
+	tr := ur.Tracer.Tracer("User-PublishUploadAvatarUser Repository")
+	_, span := tr.Start(ctx, "Start PublishUploadAvatarUser")
+	defer span.End()
+
+	ur.Logger.Info("data req before publish", req)
+
+	// transform data to proto
+	msg := ur.prepareProtoPublishUploadAvatarUserMessage(req)
+
+	b, err := proto.Marshal(msg)
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.PublishUploadAvatarUser Marshal proto UploadAvatarMessage ERROR, ", err)
+		return err
+	}
+
+	message := amqp.Publishing{
+		ContentType: "text/plain",
+		Body:        []byte(b),
+	}
+
+	// Attempt to publish a message to the queue.
+	if err := ur.RabbitMQ.Publish(
+		"",                                   // exchange
+		ur.Config.RabbitMQ.QueueUploadAvatar, // queue name
+		false,                                // mandatory
+		false,                                // immediate
+		message,                              // message to publish
+	); err != nil {
+		ur.Logger.Error("UserRepositoryImpl.PublishUploadAvatarUser RabbitMQ.Publish ERROR, ", err)
+		return err
+	}
+
+	ur.Logger.Info("Success Publish Upload Avatar Users to Queue: ", ur.Config.RabbitMQ.QueueUploadAvatar)
+
+	return nil
+}
+
+func (ur *UserRepositoryImpl) UpdateAvatarUserByID(ctx context.Context, fileURL string, userID string) error {
+	tr := ur.Tracer.Tracer("User-UpdateAvatarUserByID Repository")
+	_, span := tr.Start(ctx, "Start UpdateAvatarUserByID")
+	defer span.End()
+
+	objUserID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.UpdateAvatarUserByID primitive.ObjectIDFromHex ERROR, ", err)
+		return err
+	}
+
+	_, err = ur.DB.Collection(ur.Config.Database.UsersCollection).UpdateOne(ctx,
+		bson.D{{Key: "_id", Value: objUserID}}, bson.M{
+			"$set": bson.D{{Key: "avatar_url", Value: fileURL}},
+		})
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.UpdateAvatarUserByID UpdateOne ERROR, ", err)
+		return err
+	}
+
+	return nil
+}
+
 func (ur *UserRepositoryImpl) prepareProtoPublishCreateUserShortenerMessage(req *model.GenerateShortUserMessage) *shortenerpb.CreateShortenerMessage {
 	return &shortenerpb.CreateShortenerMessage{
 		FullUrl:  req.FullURL,
 		UserId:   req.UserID,
 		ShortUrl: req.ShortURL,
+	}
+}
+
+func (ur *UserRepositoryImpl) prepareProtoPublishUploadAvatarUserMessage(req *model.UploadAvatarRequest) *uploadpb.UploadAvatarMessage {
+	return &uploadpb.UploadAvatarMessage{
+		FileName:    req.FileName,
+		ContentType: req.ContentType,
+		Avatars:     req.Avatars,
 	}
 }
