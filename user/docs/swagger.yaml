@@ -177,6 +177,39 @@ paths:
       summary: Generate Users Short URL
       tags:
       - User
+  /upload/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Authorization Bearer <Place Access Token Here>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: file avatar
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Upload Users Avatar
+      tags:
+      - User
 schemes:
 - http
 swagger: "2.0"

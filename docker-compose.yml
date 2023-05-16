@@ -33,13 +33,27 @@ services:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
     ports:
-      - "16686:16686"
-      - "14268:14268"
+      - '16686:16686'
+      - '14268:14268'
     environment:
       - COLLECTOR_OTLP_ENABLED=true
       - LOG_LEVEL=debug
     networks:
       - singkatin-dev
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=singkatin
+      - MINIO_ROOT_PASSWORD=singkatin@dev
+    networks:
+      - singkatin-dev
+    volumes:
+      - ~/.docker-conf/minio-data:/data
+    command: server --console-address :9001 /data
   auth-service-http:
     container_name: auth-service-http
     build:
@@ -139,6 +153,23 @@ services:
     links:
       - mongo
       - redis
+      - amqp
+      - jaeger
+  upload-service-consumer:
+    container_name: upload-service-consumer
+    build:
+      context: .
+      dockerfile: ./upload/build/consumer/Dockerfile
+    command: upload-service consumer
+    networks:
+      - singkatin-dev
+    restart: unless-stopped
+    depends_on:
+      - minio
+      - amqp
+      - jaeger
+    links:
+      - minio
       - amqp
       - jaeger
 networks:
