@@ -144,7 +144,7 @@ func main() {
 		// Make a channel to receive messages into infinite loop.
 		forever := make(chan bool)
 
-		queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor}
+		queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor, app.Config.RabbitMQ.QueueUpdateShortener}
 
 		for _, q := range queues {
 			go infrastructure.ConsumeMessages(app, q)

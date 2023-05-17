@@ -23,7 +23,7 @@ definitions:
       full_name:
         type: string
     type: object
-  model.GenerateShortUserRequest:
+  model.ShortUserRequest:
     properties:
       full_url:
         type: string
@@ -143,6 +143,49 @@ paths:
       summary: Update Users Profile
       tags:
       - User
+  /short/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: id short urls
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Authorization Bearer <Place Access Token Here>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: update short user
+        in: body
+        name: short
+        required: true
+        schema:
+          $ref: '#/definitions/model.ShortUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Update Users Short URL
+      tags:
+      - User
   /short/generate:
     post:
       consumes:
@@ -158,7 +201,7 @@ paths:
         name: short
         required: true
         schema:
-          $ref: '#/definitions/model.GenerateShortUserRequest'
+          $ref: '#/definitions/model.ShortUserRequest'
       produces:
       - application/json
       responses:

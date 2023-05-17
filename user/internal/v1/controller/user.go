@@ -22,6 +22,7 @@ type (
 		GenerateShort(ctx *fiber.Ctx) error
 		EditProfile(ctx *fiber.Ctx) error
 		UploadAvatar(ctx *fiber.Ctx) error
+		UpdateShort(ctx *fiber.Ctx) error
 	}
 
 	// UserControllerImpl is an app user struct that consists of all the dependencies needed for user controller
@@ -112,7 +113,7 @@ func (uc *UserControllerImpl) Dashboard(ctx *fiber.Ctx) error {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
-// @Param        short body model.GenerateShortUserRequest true "generate short user"
+// @Param        short body model.ShortUserRequest true "generate short user"
 // @Success      201  {object}  helper.BaseResponse
 // @Failure      400  {object}  helper.BaseResponse
 // @Failure      500  {object}  helper.BaseResponse
@@ -122,7 +123,7 @@ func (uc *UserControllerImpl) GenerateShort(ctx *fiber.Ctx) error {
 	_, span := tr.Start(uc.Context, "Start GenerateShort")
 	defer span.End()
 
-	var req model.GenerateShortUserRequest
+	var req model.ShortUserRequest
 
 	data := ctx.Locals(model.KeyJWTValidAccess)
 	extData, err := middleware.Extract(data)
@@ -210,4 +211,41 @@ func (uc *UserControllerImpl) UploadAvatar(ctx *fiber.Ctx) error {
 	}
 
 	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success upload avatar users", resp, nil, nil)
+}
+
+// Check godoc
+// @Summary      Update Users Short URL
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        id   path string  true  "id short urls"
+// @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
+// @Param        short body model.ShortUserRequest true "update short user"
+// @Success      200  {object}  helper.BaseResponse
+// @Failure      400  {object}  helper.BaseResponse
+// @Failure      404  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /short/{id} [put]
+func (uc *UserControllerImpl) UpdateShort(ctx *fiber.Ctx) error {
+	tr := uc.Tracer.Tracer("User-UpdateShort Controller")
+	_, span := tr.Start(uc.Context, "Start UpdateShort")
+	defer span.End()
+
+	var req model.ShortUserRequest
+
+	if err := ctx.BodyParser(&req); err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusBadRequest, err.Error(), nil, err, nil)
+	}
+
+	shortID := ctx.Params("id", "")
+	if shortID == "" {
+		return helper.NewResponses[any](ctx, fiber.StatusBadRequest, "id required", model.NewError(model.Validation, "ID Required"), nil, nil)
+	}
+
+	newShort, err := uc.UserSvc.UpdateUserShorts(shortID, &req)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success update Short URL's", newShort, nil, nil)
 }

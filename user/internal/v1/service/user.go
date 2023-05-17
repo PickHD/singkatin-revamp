@@ -22,9 +22,10 @@ type (
 	UserService interface {
 		GetUserDetail(email string) (*model.User, error)
 		GetUserShorts(userID string) ([]model.UserShorts, error)
-		GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error)
+		GenerateUserShorts(userID string, req *model.ShortUserRequest) (*model.ShortUserResponse, error)
 		UpdateUserProfile(userID string, req *model.EditProfileRequest) error
 		UploadUserAvatar(ctx *fiber.Ctx, userID string) (*model.UploadAvatarResponse, error)
+		UpdateUserShorts(shortID string, req *model.ShortUserRequest) (*model.ShortUserResponse, error)
 	}
 
 	// UserServiceImpl is an app user struct that consists of all the dependencies needed for user service
@@ -88,7 +89,7 @@ func (us *UserServiceImpl) GetUserShorts(userID string) ([]model.UserShorts, err
 	return shorteners, nil
 }
 
-func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.GenerateShortUserRequest) (*model.GenerateShortUserResponse, error) {
+func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.ShortUserRequest) (*model.ShortUserResponse, error) {
 	tr := us.Tracer.Tracer("User-GenerateUserShorts Service")
 	_, span := tr.Start(us.Context, "Start GenerateUserShorts")
 	defer span.End()
@@ -104,7 +105,7 @@ func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.Generate
 		return nil, err
 	}
 
-	return &model.GenerateShortUserResponse{
+	return &model.ShortUserResponse{
 		ShortURL: msg.ShortURL,
 	}, nil
 }
@@ -186,4 +187,17 @@ func (us *UserServiceImpl) UploadUserAvatar(ctx *fiber.Ctx, userID string) (*mod
 	return &model.UploadAvatarResponse{
 		FileURL: fileUrl.String(),
 	}, nil
+}
+
+func (us *UserServiceImpl) UpdateUserShorts(shortID string, req *model.ShortUserRequest) (*model.ShortUserResponse, error) {
+	tr := us.Tracer.Tracer("User-UpdateUserShorts Service")
+	_, span := tr.Start(us.Context, "Start UpdateUserShorts")
+	defer span.End()
+
+	err := us.UserRepo.PublishUpdateUserShortener(us.Context, shortID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.ShortUserResponse{}, nil
 }

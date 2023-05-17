@@ -89,7 +89,7 @@ func SetupApplication(ctx context.Context) (*App, error) {
 		return app, err
 	}
 
-	queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor}
+	queues := []string{app.Config.RabbitMQ.QueueCreateShortener, app.Config.RabbitMQ.QueueUpdateVisitor, app.Config.RabbitMQ.QueueUpdateShortener}
 
 	for _, q := range queues {
 		_, err = amqpClient.QueueDeclare(

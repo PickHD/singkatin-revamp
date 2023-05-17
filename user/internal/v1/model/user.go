@@ -24,13 +24,13 @@ type (
 		Visited  int64  `json:"visited"`
 	}
 
-	// GenerateShortUserRequest consist request data generate short users
-	GenerateShortUserRequest struct {
+	// ShortUserRequest consist request data generate/update short users
+	ShortUserRequest struct {
 		FullURL string `json:"full_url"`
 	}
 
-	// GenerateShortUserResponse consist response data when success generate short users
-	GenerateShortUserResponse struct {
+	// ShortUserResponse consist response data when success generate/update short users
+	ShortUserResponse struct {
 		ShortURL string `json:"short_url"`
 	}
 
