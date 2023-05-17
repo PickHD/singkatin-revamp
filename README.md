@@ -57,4 +57,4 @@ Revamped [Last Projects URL Shortener API's](https://github.com/PickHD/singkatin
 - Forgot Password ✔️
 - Edit Profile ✔️
 - Upload Avatar Users ✔️
-- User Shorteners Advance Management 🕘
+- User Shorteners Advance Management ✔️
