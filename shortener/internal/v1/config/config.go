@@ -42,6 +42,7 @@ type (
 		QueueCreateShortener string
 		QueueUpdateVisitor   string
 		QueueUpdateShortener string
+		QueueDeleteShortener string
 	}
 
 	Tracer struct {
@@ -77,6 +78,7 @@ func loadConfiguration() *Configuration {
 			QueueCreateShortener: helper.GetEnvString("AMQP_QUEUE_CREATE_SHORTENER"),
 			QueueUpdateVisitor:   helper.GetEnvString("AMQP_QUEUE_UPDATE_VISITOR_COUNT"),
 			QueueUpdateShortener: helper.GetEnvString("AMQP_QUEUE_UPDATE_SHORTENER"),
+			QueueDeleteShortener: helper.GetEnvString("AMQP_QUEUE_DELETE_SHORTENER"),
 		},
 		Tracer: &Tracer{
 			JaegerURL: helper.GetEnvString("JAEGER_URL"),

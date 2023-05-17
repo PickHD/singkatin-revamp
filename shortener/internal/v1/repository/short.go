@@ -30,6 +30,7 @@ type (
 		PublishUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error
 		UpdateVisitorByShortURL(ctx context.Context, req *model.UpdateVisitorRequest, lastVisitedCount int64) error
 		UpdateFullURLByID(ctx context.Context, req *model.UpdateShortRequest) error
+		DeleteByID(ctx context.Context, req *model.DeleteShortRequest) error
 	}
 
 	// ShortRepositoryImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -231,6 +232,27 @@ func (sr *ShortRepositoryImpl) UpdateFullURLByID(ctx context.Context, req *model
 		})
 	if err != nil {
 		sr.Logger.Error("ShortRepositoryImpl.UpdateFullURLByID UpdateOne ERROR, ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (sr *ShortRepositoryImpl) DeleteByID(ctx context.Context, req *model.DeleteShortRequest) error {
+	tr := sr.Tracer.Tracer("Shortener-DeleteByID Repository")
+	ctx, span := tr.Start(ctx, "Start DeleteByID")
+	defer span.End()
+
+	objShortID, err := primitive.ObjectIDFromHex(req.ID)
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.DeleteByID primitive.ObjectIDFromHex ERROR, ", err)
+		return err
+	}
+
+	_, err = sr.DB.Collection(sr.Config.Database.ShortenersCollection).DeleteOne(ctx,
+		bson.D{{Key: "_id", Value: objShortID}})
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.DeleteByID DeleteOne ERROR, ", err)
 		return err
 	}
 

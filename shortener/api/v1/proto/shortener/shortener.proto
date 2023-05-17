@@ -38,3 +38,7 @@ message UpdateShortenerMessage {
     string full_url=2;
 }
 
+message DeleteShortenerMessage {
+    string id = 1;
+}
+
