@@ -38,6 +38,7 @@ type (
 		QueueCreateShortener string
 		QueueUpdateVisitor   string
 		QueueUploadAvatar    string
+		QueueUpdateShortener string
 	}
 
 	Secret struct {
@@ -82,6 +83,7 @@ func loadConfiguration() *Configuration {
 			QueueCreateShortener: helper.GetEnvString("AMQP_QUEUE_CREATE_SHORTENER"),
 			QueueUpdateVisitor:   helper.GetEnvString("AMQP_QUEUE_UPDATE_VISITOR"),
 			QueueUploadAvatar:    helper.GetEnvString("AMQP_QUEUE_UPLOAD_AVATAR"),
+			QueueUpdateShortener: helper.GetEnvString("AMQP_QUEUE_UPDATE_SHORTENER"),
 		},
 		Secret: &Secret{
 			JWTSecret: helper.GetEnvString("JWT_SECRET"),

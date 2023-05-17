@@ -32,3 +32,8 @@ message CreateShortenerMessage {
 message UpdateVisitorCountMessage {
     string short_url=1;
 }
+
+message UpdateShortenerMessage {
+    string id =1;
+    string full_url=2;
+}

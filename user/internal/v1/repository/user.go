@@ -24,6 +24,7 @@ type (
 		UpdateProfileByID(ctx context.Context, userID string, req *model.EditProfileRequest) error
 		PublishUploadAvatarUser(ctx context.Context, req *model.UploadAvatarRequest) error
 		UpdateAvatarUserByID(ctx context.Context, fileURL string, userID string) error
+		PublishUpdateUserShortener(ctx context.Context, shortID string, req *model.ShortUserRequest) error
 	}
 
 	// UserRepositoryImpl is an app user struct that consists of all the dependencies needed for user repository
@@ -191,6 +192,44 @@ func (ur *UserRepositoryImpl) UpdateAvatarUserByID(ctx context.Context, fileURL 
 	return nil
 }
 
+func (ur *UserRepositoryImpl) PublishUpdateUserShortener(ctx context.Context, shortID string, req *model.ShortUserRequest) error {
+	tr := ur.Tracer.Tracer("User-PublishUpdateUserShortener Repository")
+	_, span := tr.Start(ctx, "Start PublishUpdateUserShortener")
+	defer span.End()
+
+	ur.Logger.Info("data req before publish", req)
+
+	// transform data to proto
+	msg := ur.prepareProtoPublishUpdateUserShortenerMessage(shortID, req)
+
+	b, err := proto.Marshal(msg)
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.PublishUpdateUserShortener Marshal proto UpdateShortenerMessage ERROR, ", err)
+		return err
+	}
+
+	message := amqp.Publishing{
+		ContentType: "text/plain",
+		Body:        []byte(b),
+	}
+
+	// Attempt to publish a message to the queue.
+	if err := ur.RabbitMQ.Publish(
+		"",                                      // exchange
+		ur.Config.RabbitMQ.QueueUpdateShortener, // queue name
+		false,                                   // mandatory
+		false,                                   // immediate
+		message,                                 // message to publish
+	); err != nil {
+		ur.Logger.Error("UserRepositoryImpl.PublishUpdateUserShortener RabbitMQ.Publish ERROR, ", err)
+		return err
+	}
+
+	ur.Logger.Info("Success Publish User Shortener to Queue: ", ur.Config.RabbitMQ.QueueUpdateShortener)
+
+	return nil
+}
+
 func (ur *UserRepositoryImpl) prepareProtoPublishCreateUserShortenerMessage(req *model.GenerateShortUserMessage) *shortenerpb.CreateShortenerMessage {
 	return &shortenerpb.CreateShortenerMessage{
 		FullUrl:  req.FullURL,
@@ -204,5 +243,12 @@ func (ur *UserRepositoryImpl) prepareProtoPublishUploadAvatarUserMessage(req *mo
 		FileName:    req.FileName,
 		ContentType: req.ContentType,
 		Avatars:     req.Avatars,
+	}
+}
+
+func (ur *UserRepositoryImpl) prepareProtoPublishUpdateUserShortenerMessage(shortID string, req *model.ShortUserRequest) *shortenerpb.UpdateShortenerMessage {
+	return &shortenerpb.UpdateShortenerMessage{
+		Id:      shortID,
+		FullUrl: req.FullURL,
 	}
 }
