@@ -26,6 +26,7 @@ type (
 		UpdateUserProfile(userID string, req *model.EditProfileRequest) error
 		UploadUserAvatar(ctx *fiber.Ctx, userID string) (*model.UploadAvatarResponse, error)
 		UpdateUserShorts(shortID string, req *model.ShortUserRequest) (*model.ShortUserResponse, error)
+		DeleteUserShorts(shortID string) (*model.ShortUserResponse, error)
 	}
 
 	// UserServiceImpl is an app user struct that consists of all the dependencies needed for user service
@@ -195,6 +196,19 @@ func (us *UserServiceImpl) UpdateUserShorts(shortID string, req *model.ShortUser
 	defer span.End()
 
 	err := us.UserRepo.PublishUpdateUserShortener(us.Context, shortID, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.ShortUserResponse{}, nil
+}
+
+func (us *UserServiceImpl) DeleteUserShorts(shortID string) (*model.ShortUserResponse, error) {
+	tr := us.Tracer.Tracer("User-DeleteUserShorts Service")
+	_, span := tr.Start(us.Context, "Start DeleteUserShorts")
+	defer span.End()
+
+	err := us.UserRepo.PublishDeleteUserShortener(us.Context, shortID)
 	if err != nil {
 		return nil, err
 	}

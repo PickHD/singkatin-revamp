@@ -144,6 +144,42 @@ paths:
       tags:
       - User
   /short/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: id short urls
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Authorization Bearer <Place Access Token Here>
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.BaseResponse'
+      summary: Delete Users Short URL
+      tags:
+      - User
     put:
       consumes:
       - application/json
