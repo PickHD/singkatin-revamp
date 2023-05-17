@@ -25,6 +25,7 @@ type (
 		PublishUploadAvatarUser(ctx context.Context, req *model.UploadAvatarRequest) error
 		UpdateAvatarUserByID(ctx context.Context, fileURL string, userID string) error
 		PublishUpdateUserShortener(ctx context.Context, shortID string, req *model.ShortUserRequest) error
+		PublishDeleteUserShortener(ctx context.Context, shortID string) error
 	}
 
 	// UserRepositoryImpl is an app user struct that consists of all the dependencies needed for user repository
@@ -230,6 +231,44 @@ func (ur *UserRepositoryImpl) PublishUpdateUserShortener(ctx context.Context, sh
 	return nil
 }
 
+func (ur *UserRepositoryImpl) PublishDeleteUserShortener(ctx context.Context, shortID string) error {
+	tr := ur.Tracer.Tracer("User-PublishDeleteUserShortener Repository")
+	_, span := tr.Start(ctx, "Start PublishDeleteUserShortener")
+	defer span.End()
+
+	ur.Logger.Info("data req before publish", shortID)
+
+	// transform data to proto
+	msg := ur.prepareProtoPublishDeleteUserShortenerMessage(shortID)
+
+	b, err := proto.Marshal(msg)
+	if err != nil {
+		ur.Logger.Error("UserRepositoryImpl.PublishDeleteUserShortener Marshal proto DeleteShortenerMessage ERROR, ", err)
+		return err
+	}
+
+	message := amqp.Publishing{
+		ContentType: "text/plain",
+		Body:        []byte(b),
+	}
+
+	// Attempt to publish a message to the queue.
+	if err := ur.RabbitMQ.Publish(
+		"",                                      // exchange
+		ur.Config.RabbitMQ.QueueDeleteShortener, // queue name
+		false,                                   // mandatory
+		false,                                   // immediate
+		message,                                 // message to publish
+	); err != nil {
+		ur.Logger.Error("UserRepositoryImpl.PublishDeleteUserShortener RabbitMQ.Publish ERROR, ", err)
+		return err
+	}
+
+	ur.Logger.Info("Success Publish User Shortener to Queue: ", ur.Config.RabbitMQ.QueueDeleteShortener)
+
+	return nil
+}
+
 func (ur *UserRepositoryImpl) prepareProtoPublishCreateUserShortenerMessage(req *model.GenerateShortUserMessage) *shortenerpb.CreateShortenerMessage {
 	return &shortenerpb.CreateShortenerMessage{
 		FullUrl:  req.FullURL,
@@ -250,5 +289,11 @@ func (ur *UserRepositoryImpl) prepareProtoPublishUpdateUserShortenerMessage(shor
 	return &shortenerpb.UpdateShortenerMessage{
 		Id:      shortID,
 		FullUrl: req.FullURL,
+	}
+}
+
+func (ur *UserRepositoryImpl) prepareProtoPublishDeleteUserShortenerMessage(shortID string) *shortenerpb.DeleteShortenerMessage {
+	return &shortenerpb.DeleteShortenerMessage{
+		Id: shortID,
 	}
 }

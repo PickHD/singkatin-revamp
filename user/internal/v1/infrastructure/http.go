@@ -38,6 +38,8 @@ func setupRouter(app *application.App) {
 		v1.Post("/upload/avatar", middleware.ValidateJWTMiddleware, dep.UserController.UploadAvatar)
 
 		v1.Put("/short/:id", middleware.ValidateJWTMiddleware, dep.UserController.UpdateShort)
+
+		v1.Delete("/short/:id", middleware.ValidateJWTMiddleware, dep.UserController.DeleteShort)
 	}
 
 	// handler for route not found

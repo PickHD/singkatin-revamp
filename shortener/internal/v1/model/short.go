@@ -35,4 +35,8 @@ type (
 		ID      string `json:"id"`
 		FullURL string `json:"full_url"`
 	}
+
+	DeleteShortRequest struct {
+		ID string `json:"id"`
+	}
 )

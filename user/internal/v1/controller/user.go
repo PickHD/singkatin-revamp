@@ -23,6 +23,7 @@ type (
 		EditProfile(ctx *fiber.Ctx) error
 		UploadAvatar(ctx *fiber.Ctx) error
 		UpdateShort(ctx *fiber.Ctx) error
+		DeleteShort(ctx *fiber.Ctx) error
 	}
 
 	// UserControllerImpl is an app user struct that consists of all the dependencies needed for user controller
@@ -242,10 +243,40 @@ func (uc *UserControllerImpl) UpdateShort(ctx *fiber.Ctx) error {
 		return helper.NewResponses[any](ctx, fiber.StatusBadRequest, "id required", model.NewError(model.Validation, "ID Required"), nil, nil)
 	}
 
-	newShort, err := uc.UserSvc.UpdateUserShorts(shortID, &req)
+	_, err := uc.UserSvc.UpdateUserShorts(shortID, &req)
 	if err != nil {
 		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
 	}
 
-	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success update Short URL's", newShort, nil, nil)
+	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success update Short URL's", nil, nil, nil)
+}
+
+// Check godoc
+// @Summary      Delete Users Short URL
+// @Tags         User
+// @Accept       json
+// @Produce      json
+// @Param        id   path string  true  "id short urls"
+// @Param        Authorization header string true "Authorization Bearer <Place Access Token Here>"
+// @Success      200  {object}  helper.BaseResponse
+// @Failure      400  {object}  helper.BaseResponse
+// @Failure      404  {object}  helper.BaseResponse
+// @Failure      500  {object}  helper.BaseResponse
+// @Router       /short/{id} [delete]
+func (uc *UserControllerImpl) DeleteShort(ctx *fiber.Ctx) error {
+	tr := uc.Tracer.Tracer("User-DeleteShort Controller")
+	_, span := tr.Start(uc.Context, "Start DeleteShort")
+	defer span.End()
+
+	shortID := ctx.Params("id", "")
+	if shortID == "" {
+		return helper.NewResponses[any](ctx, fiber.StatusBadRequest, "id required", model.NewError(model.Validation, "ID Required"), nil, nil)
+	}
+
+	_, err := uc.UserSvc.DeleteUserShorts(shortID)
+	if err != nil {
+		return helper.NewResponses[any](ctx, fiber.StatusInternalServerError, err.Error(), nil, err, nil)
+	}
+
+	return helper.NewResponses[any](ctx, fiber.StatusOK, "Success delete Short URL's", nil, nil, nil)
 }

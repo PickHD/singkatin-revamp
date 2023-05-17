@@ -21,6 +21,7 @@ type (
 		ClickShort(shortURL string) (*model.ClickShortResponse, error)
 		UpdateVisitorShort(ctx context.Context, req *model.UpdateVisitorRequest) error
 		UpdateShort(ctx context.Context, req *model.UpdateShortRequest) error
+		DeleteShort(ctx context.Context, req *model.DeleteShortRequest) error
 	}
 
 	// ShortServiceImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -154,6 +155,14 @@ func (ss *ShortServiceImpl) UpdateShort(ctx context.Context, req *model.UpdateSh
 	}
 
 	return ss.ShortRepo.UpdateFullURLByID(ctx, req)
+}
+
+func (ss *ShortServiceImpl) DeleteShort(ctx context.Context, req *model.DeleteShortRequest) error {
+	tr := ss.Tracer.Tracer("Shortener-DeleteShort Service")
+	ctx, span := tr.Start(ctx, "Start DeleteShort")
+	defer span.End()
+
+	return ss.ShortRepo.DeleteByID(ctx, req)
 }
 
 func (ss *ShortServiceImpl) validateCreateShort(req *model.CreateShortRequest) error {

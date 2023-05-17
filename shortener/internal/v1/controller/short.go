@@ -30,6 +30,7 @@ type (
 		ProcessCreateShortUser(ctx context.Context, msg *shortenerpb.CreateShortenerMessage) error
 		ProcessUpdateVisitorCount(ctx context.Context, msg *shortenerpb.UpdateVisitorCountMessage) error
 		ProcessUpdateShortUser(ctx context.Context, msg *shortenerpb.UpdateShortenerMessage) error
+		ProcessDeleteShortUser(ctx context.Context, msg *shortenerpb.DeleteShortenerMessage) error
 	}
 
 	// ShortControllerImpl is an app short struct that consists of all the dependencies needed for short controller
@@ -163,6 +164,23 @@ func (sc *ShortControllerImpl) ProcessUpdateShortUser(ctx context.Context, msg *
 	}
 
 	err := sc.ShortSvc.UpdateShort(ctx, req)
+	if err != nil {
+		return model.NewError(model.Internal, err.Error())
+	}
+
+	return nil
+}
+
+func (sc *ShortControllerImpl) ProcessDeleteShortUser(ctx context.Context, msg *shortenerpb.DeleteShortenerMessage) error {
+	tr := sc.Tracer.Tracer("Shortener-ProcessDeleteShortUser Controller")
+	_, span := tr.Start(sc.Context, "Start ProcessDeleteShortUser")
+	defer span.End()
+
+	req := &model.DeleteShortRequest{
+		ID: msg.GetId(),
+	}
+
+	err := sc.ShortSvc.DeleteShort(ctx, req)
 	if err != nil {
 		return model.NewError(model.Internal, err.Error())
 	}
