@@ -30,4 +30,9 @@ type (
 	UpdateVisitorRequest struct {
 		ShortURL string `json:"short_url"`
 	}
+
+	UpdateShortRequest struct {
+		ID      string `json:"id"`
+		FullURL string `json:"full_url"`
+	}
 )

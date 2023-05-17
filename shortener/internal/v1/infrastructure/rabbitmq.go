@@ -63,7 +63,22 @@ func ConsumeMessages(app *application.App, queueName string) {
 				}
 
 				app.Logger.Info(fmt.Sprintf("[%s] Success Process Message :", queueName), req)
+			case app.Config.RabbitMQ.QueueUpdateShortener:
+				req := &shortenerpb.UpdateShortenerMessage{}
 
+				err := proto.Unmarshal(msg.Body, req)
+				if err != nil {
+					app.Logger.Error("Unmarshal proto UpdateShortenerMessage ERROR, ", err)
+				}
+
+				app.Logger.Info(fmt.Sprintf("[%s] Success Consume Message :", queueName), req)
+
+				err = dep.ShortController.ProcessUpdateShortUser(app.Context, req)
+				if err != nil {
+					app.Logger.Error("ProcessUpdateShortUser ERROR, ", err)
+				}
+
+				app.Logger.Info(fmt.Sprintf("[%s] Success Process Message :", queueName), req)
 			}
 		}
 	}()

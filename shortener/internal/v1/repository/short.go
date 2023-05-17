@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -28,6 +29,7 @@ type (
 		SetFullURLByKey(ctx context.Context, shortURL string, fullURL string, duration time.Duration) error
 		PublishUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error
 		UpdateVisitorByShortURL(ctx context.Context, req *model.UpdateVisitorRequest, lastVisitedCount int64) error
+		UpdateFullURLByID(ctx context.Context, req *model.UpdateShortRequest) error
 	}
 
 	// ShortRepositoryImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -206,6 +208,29 @@ func (sr *ShortRepositoryImpl) UpdateVisitorByShortURL(ctx context.Context, req 
 		})
 	if err != nil {
 		sr.Logger.Error("ShortRepositoryImpl.UpdateVisitorByShortURL UpdateOne ERROR, ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (sr *ShortRepositoryImpl) UpdateFullURLByID(ctx context.Context, req *model.UpdateShortRequest) error {
+	tr := sr.Tracer.Tracer("Shortener-UpdateFullURLByID Repository")
+	ctx, span := tr.Start(ctx, "Start UpdateFullURLByID")
+	defer span.End()
+
+	objShortID, err := primitive.ObjectIDFromHex(req.ID)
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.UpdateFullURLByID primitive.ObjectIDFromHex ERROR, ", err)
+		return err
+	}
+
+	_, err = sr.DB.Collection(sr.Config.Database.ShortenersCollection).UpdateOne(ctx,
+		bson.D{{Key: "_id", Value: objShortID}}, bson.M{
+			"$set": bson.D{{Key: "full_url", Value: req.FullURL}, {Key: "updated_at", Value: time.Now()}},
+		})
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.UpdateFullURLByID UpdateOne ERROR, ", err)
 		return err
 	}
 

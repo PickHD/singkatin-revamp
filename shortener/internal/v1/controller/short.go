@@ -29,6 +29,7 @@ type (
 		// rabbitmq
 		ProcessCreateShortUser(ctx context.Context, msg *shortenerpb.CreateShortenerMessage) error
 		ProcessUpdateVisitorCount(ctx context.Context, msg *shortenerpb.UpdateVisitorCountMessage) error
+		ProcessUpdateShortUser(ctx context.Context, msg *shortenerpb.UpdateShortenerMessage) error
 	}
 
 	// ShortControllerImpl is an app short struct that consists of all the dependencies needed for short controller
@@ -144,6 +145,24 @@ func (sc *ShortControllerImpl) ProcessUpdateVisitorCount(ctx context.Context, ms
 	}
 
 	err := sc.ShortSvc.UpdateVisitorShort(ctx, req)
+	if err != nil {
+		return model.NewError(model.Internal, err.Error())
+	}
+
+	return nil
+}
+
+func (sc *ShortControllerImpl) ProcessUpdateShortUser(ctx context.Context, msg *shortenerpb.UpdateShortenerMessage) error {
+	tr := sc.Tracer.Tracer("Shortener-ProcessUpdateShortUser Controller")
+	_, span := tr.Start(sc.Context, "Start ProcessUpdateShortUser")
+	defer span.End()
+
+	req := &model.UpdateShortRequest{
+		ID:      msg.GetId(),
+		FullURL: msg.GetFullUrl(),
+	}
+
+	err := sc.ShortSvc.UpdateShort(ctx, req)
 	if err != nil {
 		return model.NewError(model.Internal, err.Error())
 	}

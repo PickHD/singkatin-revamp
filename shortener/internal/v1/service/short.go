@@ -20,6 +20,7 @@ type (
 		CreateShort(ctx context.Context, req *model.CreateShortRequest) error
 		ClickShort(shortURL string) (*model.ClickShortResponse, error)
 		UpdateVisitorShort(ctx context.Context, req *model.UpdateVisitorRequest) error
+		UpdateShort(ctx context.Context, req *model.UpdateShortRequest) error
 	}
 
 	// ShortServiceImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -141,6 +142,18 @@ func (ss *ShortServiceImpl) UpdateVisitorShort(ctx context.Context, req *model.U
 	}
 
 	return nil
+}
+
+func (ss *ShortServiceImpl) UpdateShort(ctx context.Context, req *model.UpdateShortRequest) error {
+	tr := ss.Tracer.Tracer("Shortener-UpdateShort Service")
+	ctx, span := tr.Start(ctx, "Start UpdateShort")
+	defer span.End()
+
+	if _, err := url.ParseRequestURI(req.FullURL); err != nil {
+		return model.NewError(model.Validation, err.Error())
+	}
+
+	return ss.ShortRepo.UpdateFullURLByID(ctx, req)
 }
 
 func (ss *ShortServiceImpl) validateCreateShort(req *model.CreateShortRequest) error {
