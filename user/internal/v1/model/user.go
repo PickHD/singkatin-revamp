@@ -32,6 +32,7 @@ type (
 	// ShortUserResponse consist response data when success generate/update short users
 	ShortUserResponse struct {
 		ShortURL string `json:"short_url"`
+		Method   string `json:"method"`
 	}
 
 	// GenerateShortUserMessage consist message short users to publish

@@ -4,13 +4,14 @@ import "github.com/PickHD/singkatin-revamp/user/internal/v1/helper"
 
 type (
 	Configuration struct {
-		Server   *Server
-		Common   *Common
-		Database *Database
-		RabbitMQ *RabbitMQ
-		Secret   *Secret
-		Tracer   *Tracer
-		MinIO    *MinIO
+		Server      *Server
+		Common      *Common
+		Database    *Database
+		RabbitMQ    *RabbitMQ
+		Secret      *Secret
+		Tracer      *Tracer
+		MinIO       *MinIO
+		HttpService *HttpService
 	}
 
 	Common struct {
@@ -58,6 +59,10 @@ type (
 		UseSSL    bool
 		Location  string
 	}
+
+	HttpService struct {
+		ShortenerBaseAPIURL string
+	}
 )
 
 func loadConfiguration() *Configuration {
@@ -100,6 +105,9 @@ func loadConfiguration() *Configuration {
 			Bucket:    helper.GetEnvString("MINIO_BUCKET"),
 			UseSSL:    helper.GetEnvBool("MINIO_USE_SSL"),
 			Location:  helper.GetEnvString("MINIO_LOCATION"),
+		},
+		HttpService: &HttpService{
+			ShortenerBaseAPIURL: helper.GetEnvString("SHORTENER_BASE_API_URL"),
 		},
 	}
 }

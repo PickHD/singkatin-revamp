@@ -98,7 +98,7 @@ func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.ShortUse
 	msg := model.GenerateShortUserMessage{
 		FullURL:  req.FullURL,
 		UserID:   userID,
-		ShortURL: helper.RandomStringBytesMaskImprSrcSB(8),
+		ShortURL: fmt.Sprintf("%s/%s", us.Config.HttpService.ShortenerBaseAPIURL, helper.RandomStringBytesMaskImprSrcSB(8)),
 	}
 
 	err := us.UserRepo.PublishCreateUserShortener(us.Context, &msg)
@@ -108,6 +108,7 @@ func (us *UserServiceImpl) GenerateUserShorts(userID string, req *model.ShortUse
 
 	return &model.ShortUserResponse{
 		ShortURL: msg.ShortURL,
+		Method:   "GET",
 	}, nil
 }
 
