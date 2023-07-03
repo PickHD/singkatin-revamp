@@ -154,6 +154,17 @@ func (ss *ShortServiceImpl) UpdateShort(ctx context.Context, req *model.UpdateSh
 		return model.NewError(model.Validation, err.Error())
 	}
 
+	data, err := ss.ShortRepo.GetByID(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+
+	// delete cache if any
+	err = ss.ShortRepo.DeleteFullURLByKey(ctx, data.ShortURL)
+	if err != nil {
+		return err
+	}
+
 	return ss.ShortRepo.UpdateFullURLByID(ctx, req)
 }
 
@@ -161,6 +172,17 @@ func (ss *ShortServiceImpl) DeleteShort(ctx context.Context, req *model.DeleteSh
 	tr := ss.Tracer.Tracer("Shortener-DeleteShort Service")
 	ctx, span := tr.Start(ctx, "Start DeleteShort")
 	defer span.End()
+
+	data, err := ss.ShortRepo.GetByID(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+
+	// delete cache if any
+	err = ss.ShortRepo.DeleteFullURLByKey(ctx, data.ShortURL)
+	if err != nil {
+		return err
+	}
 
 	return ss.ShortRepo.DeleteByID(ctx, req)
 }
