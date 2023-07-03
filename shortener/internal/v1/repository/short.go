@@ -26,11 +26,13 @@ type (
 		Create(ctx context.Context, req *model.Short) error
 		GetByShortURL(ctx context.Context, shortURL string) (*model.Short, error)
 		GetFullURLByKey(ctx context.Context, shortURL string) (string, error)
+		GetByID(ctx context.Context, ID string) (*model.Short, error)
 		SetFullURLByKey(ctx context.Context, shortURL string, fullURL string, duration time.Duration) error
 		PublishUpdateVisitorCount(ctx context.Context, req *model.UpdateVisitorRequest) error
 		UpdateVisitorByShortURL(ctx context.Context, req *model.UpdateVisitorRequest, lastVisitedCount int64) error
 		UpdateFullURLByID(ctx context.Context, req *model.UpdateShortRequest) error
 		DeleteByID(ctx context.Context, req *model.DeleteShortRequest) error
+		DeleteFullURLByKey(ctx context.Context, shortURL string) error
 	}
 
 	// ShortRepositoryImpl is an app short struct that consists of all the dependencies needed for short repository
@@ -145,6 +147,32 @@ func (sr *ShortRepositoryImpl) GetFullURLByKey(ctx context.Context, shortURL str
 	return result.Val(), nil
 }
 
+func (sr *ShortRepositoryImpl) GetByID(ctx context.Context, id string) (*model.Short, error) {
+	tr := sr.Tracer.Tracer("Shortener-GetByID Repository")
+	ctx, span := tr.Start(ctx, "Start GetByID")
+	defer span.End()
+
+	objShortID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.GetByID primitive.ObjectIDFromHex ERROR, ", err)
+		return nil, err
+	}
+
+	short := &model.Short{}
+
+	err = sr.DB.Collection(sr.Config.Database.ShortenersCollection).FindOne(ctx, bson.D{{Key: "_id", Value: objShortID}}).Decode(&short)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, model.NewError(model.NotFound, "short_url not found")
+		}
+
+		sr.Logger.Error("ShortRepositoryImpl.GetByID FindOne ERROR,", err)
+		return nil, err
+	}
+
+	return short, nil
+}
+
 func (sr *ShortRepositoryImpl) SetFullURLByKey(ctx context.Context, shortURL string, fullURL string, duration time.Duration) error {
 	tr := sr.Tracer.Tracer("Shortener-SetFullURLByKey Repository")
 	ctx, span := tr.Start(ctx, "Start SetFullURLByKey")
@@ -253,6 +281,21 @@ func (sr *ShortRepositoryImpl) DeleteByID(ctx context.Context, req *model.Delete
 		bson.D{{Key: "_id", Value: objShortID}})
 	if err != nil {
 		sr.Logger.Error("ShortRepositoryImpl.DeleteByID DeleteOne ERROR, ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (sr *ShortRepositoryImpl) DeleteFullURLByKey(ctx context.Context, shortURL string) error {
+	tr := sr.Tracer.Tracer("Shortener-DeleteFullURLByKey Repository")
+	ctx, span := tr.Start(ctx, "Start DeleteFullURLByKey")
+	defer span.End()
+
+	err := sr.Redis.Del(ctx, fmt.Sprintf(model.KeyShortURL, shortURL)).Err()
+	if err != nil {
+		sr.Logger.Error("ShortRepositoryImpl.DeleteFullURLByKey Del ERROR, ", err)
+
 		return err
 	}
 
